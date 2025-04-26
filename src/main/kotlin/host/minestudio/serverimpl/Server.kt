@@ -71,6 +71,6 @@ private fun events() {
         val player = event.player
         val instance = spawnWorld
         event.spawningInstance = instance
-        player.teleport(Pos(0.0, 64.0, 0.0))
+        player.teleport(Pos(0.5, 66.0, 0.5))
     }
 }
