@@ -7,6 +7,7 @@ import host.minestudio.serverimpl.socket.SocketRegister
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
+import net.minestom.server.extras.velocity.VelocityProxy
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.block.Block
 import kotlin.system.exitProcess
@@ -54,6 +55,9 @@ fun main() {
     demoWorld()
     events()
 
+    if (System.getenv("PAPER_VELOCITY_SECRET") !== null) {
+        VelocityProxy.enable(System.getenv("PAPER_VELOCITY_SECRET"))
+    }
     SERVER.start("0.0.0.0", 25565)
 }
 
