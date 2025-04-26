@@ -15,6 +15,7 @@ class SocketRegister(
         socket.emit("register subserver", object : SocketIO.SocketCallback {
             override fun call(response: JSONObject?) {
                 isAuthenticated = response?.get("success") == true
+                println("Socket register response: $response")
                 latch.countDown()
             }
         }, JSONObject()

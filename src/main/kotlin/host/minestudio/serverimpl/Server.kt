@@ -70,8 +70,7 @@ private fun events() {
     MinecraftServer.getGlobalEventHandler().addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
         val player = event.player
         val instance = spawnWorld
-        player.setInstance(instance).thenAccept {
-            player.teleport(Pos(0.0, 64.0, 0.0))
-        }
+        event.spawningInstance = instance
+        player.teleport(Pos(0.0, 64.0, 0.0))
     }
 }
