@@ -1,0 +1,178 @@
+/**
+ * MIT License
+ *
+ * Copyright (c) 2024 Cam
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+package host.minestudio.serverimpl.impl
+
+import io.socket.client.Ack
+import io.socket.client.AckWithTimeout
+import io.socket.client.IO
+import io.socket.client.Socket
+import io.socket.emitter.Emitter
+import org.jetbrains.annotations.ApiStatus
+import org.json.JSONObject
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import java.util.*
+
+/**
+ * SocketIO is a program that allows for
+ * transferring data between servers with
+ * a callback.
+ */
+@ApiStatus.Experimental
+@Suppress("unused")
+object SocketIO {
+    val l: Logger = LoggerFactory.getLogger(SocketIO::class.java)
+
+    var io: Socket? = null
+    private val pendingRegistration: MutableList<SocketListener> = ArrayList<SocketListener>()
+
+    /**
+     * Connects to a socket server.
+     *
+     * @param connSet The connection data.
+     * @param secure  Whether the connection is secure.
+     * @return [Socket] The socket.
+     */
+    @Suppress("unused")
+    fun connect(connSet: ConnSet, secure: Boolean): SocketIO? {
+
+        try {
+            val opts = IO.Options().apply {
+                reconnection = true
+            }
+
+            println("Connecting to socket server: ${if (secure) "https" else "http"}://${connSet.ip}:${connSet.port}")
+            io = IO.socket(if (secure) {
+                "https://${connSet.ip}:${connSet.port}"
+            } else {
+                "http://${connSet.ip}:${connSet.port}"
+            }, opts)
+            io!!.connect()
+            Thread.ofVirtual().name("SocketIO").start(Runnable {
+                for (listener in pendingRegistration) {
+                    io!!.on(listener.channel, Emitter.Listener { obj: Array<Any?>? ->
+                        if (Arrays.stream<Any?>(obj).toList().last() is Ack) {
+                            listener.listen(obj, obj?.lastOrNull() as? Ack)
+                        } else {
+                            listener.listen(obj, null)
+                        }
+                    })
+                }
+            })
+            io!!.onAnyIncoming { args ->
+                val event = args[0] as String
+                println("[-----] Received event: $event")
+            }
+            io!!.onAnyOutgoing { args ->
+                val event = args[0] as String
+                println("[-----] Emitting event: $event")
+            }
+            return this
+        } catch (e: Exception) {
+            throw Error("Failed to connect to socket server: " + e.message)
+        }
+    }
+
+    /**
+     * Registers a listener to the socket.
+     *
+     * @param listener [SocketListener] The listener to register.
+     */
+    @Suppress("unused")
+    fun register(listener: SocketListener) {
+        if (io != null) {
+            if (!io!!.connected()) {
+                println("Adding listener ${listener.name} to pending registration")
+                pendingRegistration.add(listener)
+            } else {
+                println("Registering listener ${listener.name}")
+                io!!.on(listener.channel, Emitter.Listener { obj: Array<Any?>? ->
+                    if (Arrays.stream<Any?>(obj).toList().last() is Ack) {
+                        listener.listen(obj, obj?.lastOrNull() as? Ack)
+                    } else {
+                        listener.listen(obj, null)
+                    }
+                })
+            }
+        } else {
+            println("SocketIO is not connected. Adding listener ${listener.name} to pending registration")
+            pendingRegistration.add(listener)
+        }
+    }
+
+    /**
+     * Emits a socket event.
+     *
+     * @param channel The channel to emit to.
+     * @param args    The arguments to emit.
+     *
+     */
+    @Suppress("unused")
+    fun emit(channel: String, vararg args: Any?) {
+        if (io != null) {
+            io!!.emit(channel, *args)
+        } else {
+            l.error("SocketIO is not connected.")
+        }
+    }
+
+    /**
+     * Emits a socket event with a callback.
+     *
+     * @param channel The channel to emit to.
+     * @param args    The arguments to emit.
+     * @param callback The callback to call.
+     *
+     */
+    @Suppress("unused")
+    fun emit(channel: String, callback: SocketCallback, vararg args: Any?) {
+        if (io != null) {
+            io!!.emit(channel, args, SocketAcknowledgement(callback))
+        } else {
+            l.error("SocketIO is not connected.")
+        }
+    }
+
+    @FunctionalInterface
+    interface SocketCallback {
+        fun call(response: JSONObject?)
+    }
+
+    class SocketAcknowledgement(private val cb: SocketCallback) : AckWithTimeout(10000) {
+        override fun onTimeout() {
+            cb.call(JSONObject().put("success", false))
+        }
+
+        override fun onSuccess(vararg args: Any?) {
+            val data = args.firstOrNull()
+            val response = when (data) {
+                is Boolean -> JSONObject().put("success", data)
+                is JSONObject -> data.put("success", true)
+                is String -> JSONObject(data).put("success", true)
+                else -> null
+            }
+            cb.call(response)
+        }
+    }
+}
