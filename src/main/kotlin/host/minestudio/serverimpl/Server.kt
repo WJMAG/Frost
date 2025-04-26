@@ -7,6 +7,7 @@ import host.minestudio.serverimpl.socket.SocketRegister
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
+import net.minestom.server.event.player.PlayerSpawnEvent
 import net.minestom.server.extras.velocity.VelocityProxy
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.block.Block
@@ -69,8 +70,14 @@ private fun demoWorld() {
 private fun events() {
     MinecraftServer.getGlobalEventHandler().addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
         val player = event.player
-        val instance = spawnWorld
-        event.spawningInstance = instance
+        event.spawningInstance = spawnWorld
+        event.player.respawnPoint = Pos(0.5, 66.0, 0.5)
+    }
+    MinecraftServer.getGlobalEventHandler().addListener(PlayerSpawnEvent::class.java) { event ->
+        val player = event.player
+        player.instance = spawnWorld
         player.teleport(Pos(0.5, 66.0, 0.5))
+        player.sendMessage("Welcome to a Minestudio SubServer!")
+        player.sendMessage("This is a demo world.")
     }
 }
