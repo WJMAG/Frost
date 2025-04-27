@@ -3,7 +3,6 @@ package host.minestudio.serverimpl
 import host.minestudio.serverimpl.impl.ConnSet
 import host.minestudio.serverimpl.impl.SocketIO
 import host.minestudio.serverimpl.socket.SocketAuth
-import host.minestudio.serverimpl.socket.SocketRegister
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
@@ -46,14 +45,6 @@ fun main() {
                 exitProcess(1)
             } else {
                 logger.info("Authenticated with the GatewayAPI.")
-            }
-
-            val register = SocketRegister(socket).register()
-            if(!register) {
-                logger.error("Failed to register with the API. Killing process.")
-                exitProcess(1)
-            } else {
-                logger.info("Registered with the GatewayAPI.")
             }
         }
     }
