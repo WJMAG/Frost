@@ -19,9 +19,10 @@ class SocketAuth(
                 latch.countDown()
             }
         }, JSONObject()
-            .put("hostname", System.getenv("POD_IP"))
+            .put("pod_ip", System.getenv("POD_IP"))
             .put("server_id", System.getenv("SERVER_ID"))
             .put("token", System.getenv("EXCHANGE_TOKEN") ?: "null")
+            .put("type", "SUBSERVER")
         )
         latch.await()
         return isAuthenticated
