@@ -8,6 +8,8 @@ import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
+import net.minestom.server.extras.MojangAuth
+import net.minestom.server.extras.bungee.BungeeCordProxy
 import net.minestom.server.extras.velocity.VelocityProxy
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.block.Block
@@ -36,29 +38,39 @@ fun main() {
         ),
         false
     )!!
+    socket.io!!.on("ready") { args ->
+        Thread.ofVirtual().name("Setup Socket").start {
+            val auth = SocketAuth(socket).authenticate()
+            if(!auth) {
+                logger.error("Failed to authenticate with the API. Killing process.")
+                exitProcess(1)
+            } else {
+                logger.info("Authenticated with the GatewayAPI.")
+            }
 
-    val auth = SocketAuth(socket).authenticate()
-    if(!auth) {
-        logger.error("Failed to authenticate with the API. Killing process.")
-        exitProcess(1)
-    } else {
-        logger.info("Authenticated with the GatewayAPI.")
+            val register = SocketRegister(socket).register()
+            if(!register) {
+                logger.error("Failed to register with the API. Killing process.")
+                exitProcess(1)
+            } else {
+                logger.info("Registered with the GatewayAPI.")
+            }
+        }
     }
 
-    val register = SocketRegister(socket).register()
-    if(!register) {
-        logger.error("Failed to register with the API. Killing process.")
-        exitProcess(1)
-    } else {
-        logger.info("Registered with the GatewayAPI.")
-    }
+
 
     demoWorld()
     events()
 
-    if (System.getenv("PAPER_VELOCITY_SECRET") !== null) {
-        VelocityProxy.enable(System.getenv("PAPER_VELOCITY_SECRET"))
+    if(System.getenv("BUNGEE") !== null) {
+        BungeeCordProxy.enable()
+    } else if(System.getenv("VELOCITY") !== null) {
+        VelocityProxy.enable(System.getenv("VELOCITY"))
+    } else {
+        MojangAuth.init()
     }
+
     SERVER.start("0.0.0.0", 25565)
 }
 
