@@ -78,7 +78,6 @@ private fun events() {
     }
     MinecraftServer.getGlobalEventHandler().addListener(PlayerSpawnEvent::class.java) { event ->
         val player = event.player
-        player.instance = spawnWorld
         player.teleport(Pos(0.5, 66.0, 0.5))
         player.sendMessage("Welcome to a Minestudio SubServer!")
         player.sendMessage("This is a demo world.")
