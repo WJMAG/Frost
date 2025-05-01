@@ -11,7 +11,7 @@ import java.nio.file.Path
  */
 class JarLibrary(private val path: Path) : ClassPathLibrary {
     @Throws(LibraryLoadingException::class)
-    fun register(store: LibraryStore) {
+    override fun register(store: LibraryStore) {
         if (Files.notExists(this.path)) {
             throw LibraryLoadingException("Could not find library at " + this.path)
         } else {

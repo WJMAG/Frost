@@ -1,5 +1,6 @@
 package host.minestudio.frost.api.shards
 
+import com.moandjiezana.toml.Toml
 import jdk.internal.module.ModuleInfo
 import org.jetbrains.annotations.ApiStatus
 import org.slf4j.LoggerFactory
@@ -62,6 +63,6 @@ class ShardClassLoader
                     .warn("Module info not found in ${dataDir?.absolutePath}")
                 return null
             }
-            return Toml().read(`is`).to(ModuleInfo::class.java)
+            return Toml().read(`is`).to(ShardInfo::class.java)
         }
 }

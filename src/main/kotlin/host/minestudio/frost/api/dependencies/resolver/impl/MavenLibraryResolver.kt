@@ -1,15 +1,18 @@
 package host.minestudio.frost.api.dependencies.resolver.impl
 
-import com.sun.tools.classfile.Dependency
 import host.minestudio.frost.api.dependencies.resolver.lib.ClassPathLibrary
 import host.minestudio.frost.api.dependencies.resolver.lib.LibraryLoadingException
 import host.minestudio.frost.api.dependencies.resolver.lib.LibraryStore
+import java.io.File
+import java.util.ArrayList
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils
 import org.eclipse.aether.DefaultRepositorySystemSession
 import org.eclipse.aether.RepositorySystem
 import org.eclipse.aether.collection.CollectRequest
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory
+import org.eclipse.aether.graph.Dependency
 import org.eclipse.aether.graph.DependencyFilter
+import org.eclipse.aether.impl.DefaultServiceLocator
 import org.eclipse.aether.repository.LocalRepository
 import org.eclipse.aether.repository.RemoteRepository
 import org.eclipse.aether.resolution.ArtifactResult
@@ -18,21 +21,19 @@ import org.eclipse.aether.resolution.DependencyResolutionException
 import org.eclipse.aether.resolution.DependencyResult
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory
 import org.eclipse.aether.spi.connector.transport.TransporterFactory
-import org.eclipse.aether.transfer.AbstractTransferListener
-import org.eclipse.aether.transfer.TransferEvent
 import org.eclipse.aether.transport.http.HttpTransporterFactory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.io.File
 
 /**
  * @author PaperMC
  */
+@Suppress("unused")
 class MavenLibraryResolver : ClassPathLibrary {
     private val repository: RepositorySystem
     private val session: DefaultRepositorySystemSession
-    private val repositories: MutableList<RemoteRepository?> = ArrayList<Any?>()
-    private val dependencies: MutableList<Dependency?> = ArrayList<Any?>()
+    private val repositories: MutableList<RemoteRepository> = ArrayList<RemoteRepository>()
+    private val dependencies: MutableList<Dependency> = ArrayList<Dependency>()
 
     init {
         val locator: DefaultServiceLocator = MavenRepositorySystemUtils.newServiceLocator()
@@ -41,12 +42,10 @@ class MavenLibraryResolver : ClassPathLibrary {
         this.repository = locator.getService(RepositorySystem::class.java)
         this.session = MavenRepositorySystemUtils.newSession()
         this.session.setSystemProperties(System.getProperties())
-        this.session.setChecksumPolicy("fail")
-        this.session.setLocalRepositoryManager(
-            this.repository.newLocalRepositoryManager(
-                this.session,
-                LocalRepository("libraries")
-            )
+        this.session.checksumPolicy = "fail"
+        this.session.localRepositoryManager = this.repository.newLocalRepositoryManager(
+            this.session,
+            LocalRepository("libraries")
         )
         this.session.setReadOnly()
     }
@@ -60,8 +59,8 @@ class MavenLibraryResolver : ClassPathLibrary {
     }
 
     @Throws(LibraryLoadingException::class)
-    fun register(store: LibraryStore) {
-        val repos: MutableList<RemoteRepository?>? =
+    override fun register(store: LibraryStore) {
+        val repos: MutableList<RemoteRepository> =
             this.repository.newResolutionRepositories(this.session, this.repositories)
 
         val result: DependencyResult
@@ -84,14 +83,6 @@ class MavenLibraryResolver : ClassPathLibrary {
             val artifact: ArtifactResult = var8.next() as ArtifactResult
             val file: File = artifact.artifact.getFile()
             store.addLibrary(file.toPath())
-        }
-    }
-
-    internal inner class Transfer() : AbstractTransferListener() {
-        fun transferInitiated(event: TransferEvent) {
-            val l = logger
-            val repo: String? = event.resource.repositoryUrl
-            l.info("Downloading {}", repo + event.resource.resourceName)
         }
     }
 
