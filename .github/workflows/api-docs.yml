@@ -31,13 +31,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Setup gradle
-        uses: davidkhala/setup-gradle@0.0.0
-      - name: Build API Docs
-        run: |
-          ./gradlew api:dokkaHtmlk
+
+      # Setup Gradle
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Set up JDK for Gradle
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Fix gradle permissions
+        run: chmod +x ./gradlew
+
+      # Build the project using Gradle
+      - name: Build with Gradle
+        run: ./gradlew api:dokkaHtml
+          
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
