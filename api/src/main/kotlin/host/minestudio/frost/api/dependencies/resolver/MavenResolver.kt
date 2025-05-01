@@ -1,7 +1,7 @@
 package host.minestudio.frost.api.dependencies.resolver
 
+import host.minestudio.frost.api.dependencies.RemoteRepository
 import org.eclipse.aether.graph.Dependency
-import org.eclipse.aether.repository.RemoteRepository
 
 interface MavenResolver {
 

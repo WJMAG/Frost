@@ -71,6 +71,8 @@ fun main() {
 
     ShardManager().setup(File(System.getProperty("user.dir")))
 
+    MinecraftServer.setBrandName("§bFrost §7(§aMineStudio§7)§f")
+
     SERVER.start("0.0.0.0", 25565)
     println("Server started on port 25565")
 }

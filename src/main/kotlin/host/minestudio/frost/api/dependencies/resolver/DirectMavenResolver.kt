@@ -117,8 +117,8 @@ class DirectMavenResolver : ClassPathLibrary, MavenResolver {
      * @param owningClass Owning class
      * @param remoteRepository Remote repository
      */
-    override fun addRepository(owningClass: Class<*>?, remoteRepository: RemoteRepository) {
-        this.repositories.put(remoteRepository, owningClass)
+    override fun addRepository(owningClass: Class<*>?, remoteRepository: host.minestudio.frost.api.dependencies.RemoteRepository) {
+        this.repositories.put(remoteRepository.toRemoteRepository(), owningClass)
     }
 
     companion object {
