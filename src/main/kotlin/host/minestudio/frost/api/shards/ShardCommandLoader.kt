@@ -4,10 +4,11 @@ import host.minestudio.frost.api.shards.command.ShardCommand
 import host.minestudio.frost.api.shards.command.annotation.Command
 import host.minestudio.frost.api.shards.command.annotation.Subcommand
 import net.minestom.server.command.builder.arguments.Argument
+import net.minestom.server.command.builder.arguments.ArgumentType
+import net.minestom.server.entity.Player
 import org.slf4j.Logger
 import java.lang.reflect.Method
 import java.lang.reflect.Parameter
-import java.util.Base64
 import java.util.ServiceLoader
 
 class ShardCommandLoader(
@@ -36,7 +37,7 @@ class ShardCommandLoader(
                 processSubcommands(command)
             }
 
-            createCommandOpts(cmdAnnotation, subcommands).also {
+            createCommandOpts(cmdAnnotation, command, subcommands).also {
                 logger.debug("│   Created command options for ${it.name}")
             }
         } ?: run {
@@ -115,18 +116,24 @@ class ShardCommandLoader(
     }
 
     private fun createArgumentInstance(param: Parameter): Argument<*> {
-        if (!Argument::class.java.isAssignableFrom(param.type)) {
+        val annotation = param.getAnnotation(
+            host.minestudio.frost.api.shards.command.annotation.Argument::class.java
+        ) ?: return ArgumentType.String(param.name)
+
+        val argumentType = annotation.type.java
+        if (!Argument::class.java.isAssignableFrom(argumentType)) {
             throw IllegalArgumentException("Parameter ${param.name} has unsupported type ${param.type.name}")
         }
 
         @Suppress("UNCHECKED_CAST")
-        return param.type.getDeclaredConstructor(String::class.java).newInstance(
+        return argumentType.getDeclaredConstructor(String::class.java).newInstance(
             param.name
         ) as Argument<Any>
     }
 
     private fun createCommandOpts(
         annotation: Command,
+        cmd: ShardCommand,
         subcommands: Map<Method, ShardManager.SubcommandOpts>
     ): ShardManager.CommandOpts {
         return ShardManager.CommandOpts(
@@ -135,7 +142,59 @@ class ShardCommandLoader(
             description = annotation.description,
             usage = annotation.usage,
             permission = annotation.permission,
+            cmd = cmd,
             subcommands = subcommands.takeIf { it.isNotEmpty() }
         )
+    }
+
+
+    class MinestomCommand(
+        private val command: ShardManager.CommandOpts
+    ) : net.minestom.server.command.builder.Command(command.name) {
+
+        init {
+            setDefaultExecutor { sender, context ->
+                command.cmd.execute(sender as Player)
+            }
+
+            command.subcommands?.forEach { (method, opts) ->
+                val literals = opts.path.split(" ")
+                val literalArgs = literals.mapNotNull { ArgumentType.Literal(it) }
+
+                addSyntax({ executor, ctx ->
+                    if (opts.arguments != null) {
+                        val methodParams = method.parameters
+                        if (methodParams.size != opts.arguments.size + 1) { // +1 for executor
+                            throw IllegalArgumentException("Parameter count mismatch")
+                        }
+                        val argsMap = ctx.map
+                        val shift = opts.path.split(" ").size
+                        val args = Array<Any?>(methodParams.size) { index ->
+                            when (index) {
+                                0 -> executor
+                                else -> {
+                                   val arg = methodParams[index]
+                                    val argName = arg.name
+                                    val argType = arg.type
+                                    val argValue = argsMap[argName]
+                                    if (argValue == null) {
+                                        throw IllegalArgumentException("Missing argument: $argName")
+                                    }
+
+                                    if (argType.isAssignableFrom(argValue.javaClass)) {
+                                        argValue
+                                    } else {
+                                        throw IllegalArgumentException("Argument type mismatch for $argName. Expected ${argType.name.split(".").last()}, got ${argValue.javaClass.name.split(".").last()}")
+                                    }
+                                }
+                            }
+                        }
+                        method.invoke(command.cmd, *args)
+                    } else {
+                        command.cmd.execute(executor as Player)
+                    }
+                }, *(literalArgs.toTypedArray()), *(opts.arguments?.toTypedArray() ?: emptyArray()))            }
+        }
+
     }
 }

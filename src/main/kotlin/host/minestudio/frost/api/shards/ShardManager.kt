@@ -1,6 +1,8 @@
 package host.minestudio.frost.api.shards
 
 import host.minestudio.frost.api.dependencies.resolver.DirectMavenResolver
+import host.minestudio.frost.api.shards.command.ShardCommand
+import net.minestom.server.MinecraftServer
 import net.minestom.server.command.builder.arguments.Argument
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -101,7 +103,7 @@ class ShardManager {
 
             serviceLoader.forEach { shard ->
                 val timerStart = System.currentTimeMillis()
-                val shardName = shard.info?.name ?: "UNKNOWN"
+                var shardName = shard.info?.name ?: "UNKNOWN"
 
                 try {
                     logStep("SHARD", "Processing ${shard.jarLocation?.file?.split("/")?.last() ?: "UNKNOWN"}")
@@ -114,6 +116,7 @@ class ShardManager {
                         info = loader.shardInfo
                         dataFolder = dataDir.toFile()
                     }
+                    shardName = shard.info?.name ?: "UNKNOWN"
                     Thread.currentThread().contextClassLoader = this::class.java.classLoader
 
                     if (shard.info == null) {
@@ -225,6 +228,8 @@ class ShardManager {
         if (commands.isNotEmpty()) {
             logger.info("│   ┌─ Commands Registered ────────────")
             commands.forEach { cmd ->
+                val minestomCommand = ShardCommandLoader.MinestomCommand(cmd)
+                MinecraftServer.getCommandManager().register(minestomCommand)
                 logger.info("│   ├─ ${cmd.name.padEnd(15)} (${cmd.aliases.joinToString(", ")})")
                 cmd.arguments?.forEach { arg ->
                     logger.info("│   │  └─ ${arg.id.padEnd(15)} - ${arg.javaClass.name.split(".").last()}")
@@ -256,6 +261,7 @@ class ShardManager {
 
     data class CommandOpts(
         val name: String,
+        val cmd: ShardCommand,
         val aliases: Array<String>,
         val description: String,
         val usage: String,

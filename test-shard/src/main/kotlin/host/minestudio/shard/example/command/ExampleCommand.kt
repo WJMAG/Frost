@@ -5,7 +5,9 @@ import host.minestudio.frost.api.shards.command.ShardCommand
 import host.minestudio.frost.api.shards.command.annotation.Argument
 import host.minestudio.frost.api.shards.command.annotation.Command
 import host.minestudio.frost.api.shards.command.annotation.Subcommand
+import net.minestom.server.command.builder.arguments.ArgumentString
 import net.minestom.server.command.builder.arguments.minecraft.registry.ArgumentEntityType
+import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.Player
 
 @AutoService(ShardCommand::class)
@@ -21,11 +23,15 @@ class ExampleCommand : ShardCommand() {
     }
 
     @Subcommand(
-        path = "arg1",
+        path = "argument",
         description = "An example subcommand with an argument",
         usage = "/example arg1 <name>",
     )
-    fun arg1(executor: Player, @Argument name: ArgumentEntityType) {
-        executor.sendMessage("Hello, $name!")
+    fun argument(
+        executor: Player,
+        @Argument(ArgumentEntityType::class) name: EntityType,
+        @Argument(ArgumentString::class) playerName: String
+    ) {
+        executor.sendMessage("Hello, $playerName, you picked a $name!")
     }
 }
