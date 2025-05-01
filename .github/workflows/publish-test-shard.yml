@@ -27,15 +27,11 @@ jobs:
           TARGET_REPO: MineStudio-Host/example-shard.git
         run: |
           mkdir -p tmp_publish
-          cp -r test-shard/ tmp_publish/
+          cp -r test-shard/* tmp_publish/
           
           # Clone using GITHUB_TOKEN
           git clone https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/$TARGET_REPO target_repo
           cd target_repo
-          
-          # Clear existing files if you want complete replacement
-          git rm -rf .
-          git clean -fxd
           
           cp -r ../tmp_publish/* .
           git add .
