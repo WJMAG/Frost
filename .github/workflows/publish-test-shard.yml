@@ -9,38 +9,36 @@ on:
 jobs:
   publish-module:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required for pushing to other repos
     steps:
       - name: Checkout source repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up Git for target repo
+      - name: Configure Git
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
 
-      - name: Push module to target repo
+      - name: Push to target repo
         env:
-          TARGET_REPO: https://github.com/MineStudio-Host/example-shard.git
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Or a custom PAT
+          TARGET_REPO: MineStudio-Host/example-shard.git
         run: |
-          # Create temp dir and copy files
           mkdir -p tmp_publish
           cp -r test-shard/ tmp_publish/
           
-          # Clone using token auth
-          git clone https://x-access-token:$GH_TOKEN@github.com/MineStudio-Host/example-shard.git target_repo
+          # Clone using GITHUB_TOKEN
+          git clone https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/$TARGET_REPO target_repo
           cd target_repo
           
-          # Copy files
+          # Clear existing files if you want complete replacement
+          git rm -rf .
+          git clean -fxd
+          
           cp -r ../tmp_publish/* .
-          
-          # Configure git credentials
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          
-          # Commit and push
           git add .
-          git commit -m "chore(auto): Update test-shard from source repo"
+          git commit -m "chore(auto): Update from source repo"
           git push
+
