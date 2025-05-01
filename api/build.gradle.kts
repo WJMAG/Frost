@@ -18,7 +18,7 @@ dependencies {
     compileOnly("org.apache.maven:maven-resolver-provider:3.9.1")
     compileOnly("org.apache.maven.resolver:maven-resolver-impl:1.9.22")
     compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.7")
-    compileOnly("org.apache.maven.resolver:maven-resolver-transport-file:1.9.7")
+    compileOnly("org.apache.maven.resolver:maven-resolver-transport-file:1.9.22")
     compileOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.22")
     compileOnly("org.apache.maven.resolver:maven-resolver-transport-classpath:1.9.7")
 }
