@@ -1,0 +1,18 @@
+<configuration>
+    <!-- Console Appender with Colored Output -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                %d{HH:mm:ss} [%thread] %highlight(%-5level){FATAL=red bold, ERROR=red, WARN=yellow, INFO=white, DEBUG=blue, TRACE=cyan} %logger{36} - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <!-- Suppress Unnecessary Logs -->
+    <logger name="net.minestom.server" level="WARN" />
+
+    <!-- Root Logger -->
+    <root level="info">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>

@@ -1,7 +1,6 @@
 package host.minestudio.frost.api.shards
 
 import com.moandjiezana.toml.Toml
-import jdk.internal.module.ModuleInfo
 import org.jetbrains.annotations.ApiStatus
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -12,31 +11,17 @@ import java.net.URLClassLoader
  * ClassLoader for loading modules
  */
 @ApiStatus.Internal
-class ShardClassLoader
-/**
- * Constructor
- * @param urls URLs to load
- * @param dataDir Data directory
- * @param parentClassLoader Parent classloader
- */(
+class ShardClassLoader(
     urls: Array<URL?>,
-    /**
-     * Parent classloader
-     */
-    private val parentClassLoader: ClassLoader, private val dataDir: File?
-) : URLClassLoader(urls, null) {
-    /**
-     * Load a class
-     * @param name
-     * The [binary name](#binary-name) of the class
-     *
-     * @param resolve
-     * If `true` then resolve the class
-     *
-     * @return The [Class] object
-     */
+    parentClassLoader: ClassLoader,
+    private val dataDir: File?
+) : URLClassLoader(urls, parentClassLoader) {
+
+    private val logger = LoggerFactory.getLogger(ShardClassLoader::class.java)
+
     public override fun loadClass(name: String, resolve: Boolean): Class<*>? {
         try {
+            logger.debug("Loading class $name from shard classloader")
             var loadedClass = findLoadedClass(name)
             if (loadedClass == null) {
                 loadedClass = super.loadClass(name, resolve)
@@ -52,10 +37,6 @@ class ShardClassLoader
     }
 
     val shardInfo: ShardInfo?
-        /**
-         * Get the module info
-         * @return A [ModuleInfo] object
-         */
         get() {
             val `is` = getResourceAsStream("module.toml")
             if (`is` == null) {

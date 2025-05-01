@@ -3,3 +3,4 @@ plugins {
 }
 rootProject.name = "Frost"
 include("api")
+include("test-shard")

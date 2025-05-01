@@ -13,6 +13,10 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
 
+    implementation("org.slf4j:slf4j-api:2.0.17")                             // SLF4J API (Logging)
+    implementation("ch.qos.logback:logback-classic:1.5.16")                  // Logback implementation
+    implementation("ch.qos.logback:logback-core:1.5.16")                     // Logback core
+
     implementation("net.minestom:minestom-snapshots:87f6524aeb")             // MINESTOM
     implementation("com.moandjiezana.toml:toml4j:0.7.2")                     // TOML
 
@@ -38,7 +42,7 @@ kotlin {
 tasks {
     jar {
         manifest {
-            attributes["Main-Class"] = "host.minestudio.serverimpl.ServerKt"
+            attributes["Main-Class"] = "host.minestudio.frost.ServerKt"
         }
     }
     build {
