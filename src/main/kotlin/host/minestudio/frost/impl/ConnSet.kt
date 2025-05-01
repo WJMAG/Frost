@@ -21,31 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package host.minestudio.serverimpl.impl
-
-import io.socket.client.Ack
-
+package host.minestudio.frost.impl
 
 /**
- * Socket listener interface.
+ * Represents a set of connection data.
  */
-interface SocketListener {
-    /**
-     * Listens for a socket event.
-     * @param objects Objects
-     * @param callback Callback
-     */
-    fun listen(objects: Array<Any?>?, callback: Ack?)
-
-    /**
-     * Gets the name of the listener.
-     * @return Name
-     */
-    val name: String?
-
-    /**
-     * Gets the channel of the listener.
-     * @return Channel
-     */
-    val channel: String?
-}
+data class ConnSet
+/**
+ * Creates a new connection set.
+ *
+ * @param ip   The IP address.
+ * @param port The port.
+ */(val ip: String?, val port: Int)

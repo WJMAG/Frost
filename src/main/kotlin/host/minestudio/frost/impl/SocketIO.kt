@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package host.minestudio.serverimpl.impl
+package host.minestudio.frost.impl
 
 import io.socket.client.Ack
 import io.socket.client.AckWithTimeout

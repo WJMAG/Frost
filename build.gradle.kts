@@ -17,6 +17,17 @@ dependencies {
 
     implementation("org.eclipse.collections:eclipse-collections:12.0.0.M3")  // ECLIPSE COLLECTIONS
     implementation("io.socket:socket.io-client:2.1.2")                       // SOCKET.IO
+
+    implementation("com.google.auto.service:auto-service:1.1.1")             // AUTO SERVICE
+
+    implementation("org.apache.maven:maven-resolver-provider:3.9.1")
+    implementation("org.apache.maven.resolver:maven-resolver-impl:1.9.7")
+    implementation("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.7")
+    implementation("org.apache.maven.resolver:maven-resolver-transport-file:1.9.7")
+    implementation("org.apache.maven.resolver:maven-resolver-transport-http:1.9.7")
+    implementation("org.apache.maven.resolver:maven-resolver-transport-classpath:1.9.7")
+
+    implementation(project(":api"))
 }
 
 kotlin {

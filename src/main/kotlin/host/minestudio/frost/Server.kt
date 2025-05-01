@@ -1,8 +1,8 @@
-package host.minestudio.serverimpl
+package host.minestudio.frost
 
-import host.minestudio.serverimpl.impl.ConnSet
-import host.minestudio.serverimpl.impl.SocketIO
-import host.minestudio.serverimpl.socket.SocketAuth
+import host.minestudio.frost.impl.ConnSet
+import host.minestudio.frost.impl.SocketIO
+import host.minestudio.frost.socket.SocketAuth
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent

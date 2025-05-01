@@ -1,6 +1,6 @@
-package host.minestudio.serverimpl.socket
+package host.minestudio.frost.socket
 
-import host.minestudio.serverimpl.impl.SocketIO
+import host.minestudio.frost.impl.SocketIO
 import org.json.JSONObject
 import java.util.concurrent.CountDownLatch
 

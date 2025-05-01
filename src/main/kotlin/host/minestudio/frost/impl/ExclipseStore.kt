@@ -1,4 +1,4 @@
-package host.minestudio.serverimpl.impl
+package host.minestudio.frost.impl
 
 import org.eclipse.collections.api.factory.Maps
 
