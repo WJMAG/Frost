@@ -18,7 +18,6 @@ dependencies {
     implementation("ch.qos.logback:logback-core:1.5.16")                     // Logback core
 
     implementation("net.minestom:minestom-snapshots:87f6524aeb")             // MINESTOM
-    implementation("com.moandjiezana.toml:toml4j:0.7.2")                     // TOML
 
     implementation("org.eclipse.collections:eclipse-collections:12.0.0.M3")  // ECLIPSE COLLECTIONS
     implementation("io.socket:socket.io-client:2.1.2")                       // SOCKET.IO

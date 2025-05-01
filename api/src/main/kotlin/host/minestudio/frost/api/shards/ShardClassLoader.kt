@@ -15,11 +15,4 @@ interface ShardClassLoader {
      */
     fun loadClass(name: String, resolve: Boolean): Class<*>?
 
-    /**
-     * The shard info for this shard.
-     * Fetched from the "module.toml"
-     * file within the shard.
-     */
-    val shardInfo: ShardInfo?
-
 }

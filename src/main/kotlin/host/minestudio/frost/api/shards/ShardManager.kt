@@ -1,6 +1,7 @@
 package host.minestudio.frost.api.shards
 
 import host.minestudio.frost.api.dependencies.resolver.DirectMavenResolver
+import host.minestudio.frost.api.shards.annotations.ShardConfig
 import host.minestudio.frost.api.shards.command.ShardCommand
 import net.minestom.server.MinecraftServer
 import net.minestom.server.command.builder.arguments.Argument
@@ -113,14 +114,26 @@ class ShardManager {
                     Thread.currentThread().contextClassLoader = shardLoader
                     shard.apply {
                         loader = ShardClassLoader(arrayOf(jarLocation), ShardManager::class.java.classLoader, dataDir.toFile())
-                        info = loader.shardInfo
+                        info = try {
+                            val config = shard.javaClass.getAnnotation<ShardConfig>(ShardConfig::class.java)
+                            ShardInfo(
+                                id = config.id,
+                                name = config.name,
+                                version = config.version,
+                                description = "unused",
+                                deps = config.deps.toList()
+                            )
+                        } catch (e: Exception) {
+                            logger.error("│   [!] FAILED TO LOAD SHARD INFO", e)
+                            throw e
+                        }
                         dataFolder = dataDir.toFile()
                     }
                     shardName = shard.info?.name ?: "UNKNOWN"
                     Thread.currentThread().contextClassLoader = this::class.java.classLoader
 
                     if (shard.info == null) {
-                        throw IllegalStateException("Shard info not found (invalid module.toml?)")
+                        throw IllegalStateException("Shard info not found (invalid/missing ShardConfig annotation?)")
                     }
 
                     logSubStep("Metadata loaded: ${shard.info!!.name} v${shard.info!!.version}")

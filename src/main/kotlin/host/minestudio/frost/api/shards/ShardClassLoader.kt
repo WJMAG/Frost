@@ -1,6 +1,5 @@
 package host.minestudio.frost.api.shards
 
-import com.moandjiezana.toml.Toml
 import org.jetbrains.annotations.ApiStatus
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -35,15 +34,4 @@ class ShardClassLoader(
             return null
         }
     }
-
-    val shardInfo: ShardInfo?
-        get() {
-            val `is` = getResourceAsStream("module.toml")
-            if (`is` == null) {
-                LoggerFactory.getLogger(ShardClassLoader::class.java)
-                    .warn("Module info not found in ${dataDir?.absolutePath}")
-                return null
-            }
-            return Toml().read(`is`).to(ShardInfo::class.java)
-        }
 }
