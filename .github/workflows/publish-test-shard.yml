@@ -21,6 +21,16 @@ jobs:
           repository: "example-shard"
           permissions: |
             contents: write
+            
+      - uses: actions/checkout@v4
+        with:
+          repository: "MineStudio-Host/example-shard"
+          token: ${{ steps.access-token.outputs.token }}
+          path: "temp-clone-path"
+
+      - name: Copy from test-shard to temp-clone-path
+        run: |
+          cp -r test-shard/* temp-clone-path
       
       - name: Push to Target Repository
         uses: tech-thinker/push-to-repo@main
@@ -29,7 +39,7 @@ jobs:
         with:
           user-name: "github-actions[bot]"
           user-email: "github-actions[bot]@users.noreply.github.com"
-          source-directory: "test-shard"
+          source-directory: "temp-clone-path"
           destination-github-username: "MineStudio-Host"
           destination-repository-name: "example-shard"
           target-branch: "main"
