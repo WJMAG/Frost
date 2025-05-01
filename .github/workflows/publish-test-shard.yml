@@ -9,20 +9,25 @@ on:
 jobs:
   publish-module:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write  # Required for pushing changes
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4\
+      
+      - uses: qoomon/actions--access-token@v3
+        id: access-token
+        with:
+          repository: "example-shard"
+          permissions: |
+            contents: write
       
       - name: Push to Target Repository
         uses: tech-thinker/push-to-repo@main
         env:
-          API_TOKEN_GITHUB: ${{ secrets.GITHUB_TOKEN }}  # Or a PAT if cross-org
+          API_TOKEN_GITHUB: ${{ steps.access-token.outputs.token }}
         with:
+          user-name: "github-actions[bot]"
+          user-email: "github-actions[bot]@users.noreply.github.com"
           source-directory: "test-shard"
           destination-github-username: "MineStudio-Host"
           destination-repository-name: "example-shard"
           target-branch: "main"
-          user-name: "github-actions[bot]"
-          user-email: "github-actions[bot]@users.noreply.github.com"
           commit-message: "chore(auto): Update test-shard from source repo"
