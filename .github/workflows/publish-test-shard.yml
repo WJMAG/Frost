@@ -22,23 +22,25 @@ jobs:
 
       - name: Push module to target repo
         env:
-          TARGET_REPO: MineStudio-Host/example-shard.git  # Just the path, not full URL
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Or use a PAT if cross-org
+          TARGET_REPO: https://github.com/MineStudio-Host/example-shard.git
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Or a custom PAT
         run: |
-          # Create a temporary directory
+          # Create temp dir and copy files
           mkdir -p tmp_publish
-          
-          # Copy only the module you want to publish
           cp -r test-shard/ tmp_publish/
           
-          # Clone the target repo using authenticated URL
-          git clone https://$GH_TOKEN@github.com/$TARGET_REPO target_repo
+          # Clone using token auth
+          git clone https://x-access-token:$GH_TOKEN@github.com/MineStudio-Host/example-shard.git target_repo
           cd target_repo
           
-          # Copy the module content
+          # Copy files
           cp -r ../tmp_publish/* .
+          
+          # Configure git credentials
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
           
           # Commit and push
           git add .
-          git commit -m "chore(auto): Update test-shard from Frost repo"
-          git push https://$GH_TOKEN@github.com/$TARGET_REPO
+          git commit -m "chore(auto): Update test-shard from source repo"
+          git push
