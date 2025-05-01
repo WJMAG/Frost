@@ -1,0 +1,45 @@
+name: Publish Module to Another Repo
+
+on:
+  push:
+    branches: [ main ]
+    # Optional: Only trigger when changes happen to your module
+    paths: [ 'test-shard/**' ]
+  workflow_dispatch:
+
+jobs:
+  publish-module:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Important to get full git history if needed
+
+      - name: Set up Git for target repo
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Push module to target repo
+        env:
+          TARGET_REPO: https://github.com/MineStudio-Host/example-shard.git
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Or a custom PAT with repo access
+        run: |
+          # Create a temporary directory
+          mkdir -p tmp_publish
+          
+          # Copy only the module you want to publish
+          cp -r test-shard/ tmp_publish/
+          
+          # Clone the target repo
+          git clone "$TARGET_REPO" target_repo
+          cd target_repo
+          
+          # Copy the module content
+          cp -r ../tmp_publish/* .
+          
+          # Commit and push
+          git add .
+          git commit -m "chore(auto): Update test-shard from Frost repo"
+          git push
