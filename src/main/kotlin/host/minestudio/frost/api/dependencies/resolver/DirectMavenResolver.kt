@@ -106,7 +106,7 @@ class DirectMavenResolver : ClassPathLibrary, MavenResolver {
      * @param owningClass Owning class
      * @param dependency Dependency
      */
-    fun addDependency(owningClass: Class<*>?, dependency: Dependency) {
+    override fun addDependency(owningClass: Class<*>?, dependency: Dependency) {
         this.dependencies.put(dependency, owningClass)
         addSharedPackage(dependency.artifact.groupId)
     }
@@ -117,7 +117,7 @@ class DirectMavenResolver : ClassPathLibrary, MavenResolver {
      * @param owningClass Owning class
      * @param remoteRepository Remote repository
      */
-    fun addRepository(owningClass: Class<*>?, remoteRepository: RemoteRepository?) {
+    override fun addRepository(owningClass: Class<*>?, remoteRepository: RemoteRepository) {
         this.repositories.put(remoteRepository, owningClass)
     }
 
