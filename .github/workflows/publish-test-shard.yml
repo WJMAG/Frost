@@ -31,8 +31,8 @@ jobs:
       - name: Copy from test-shard to temp-clone-path
         run: |
           cp -r test-shard/* temp-clone-path
-          git rm -rf temp-clone-path/src
-          git rm -rf temp-clone-path/build.gradle.kts
+          rm -rf temp-clone-path/src
+          rm -rf temp-clone-path/build.gradle.kts
       
       - name: Push to Target Repository
         uses: tech-thinker/push-to-repo@main
