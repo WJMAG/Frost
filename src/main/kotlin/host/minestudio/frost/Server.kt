@@ -23,7 +23,7 @@ lateinit var logger: org.slf4j.Logger
 
 lateinit var spawnWorld: InstanceContainer
 
-const val onlineMode = false
+const val onlineMode = true
 
 fun main() {
     logger = org.slf4j.LoggerFactory.getLogger("MinestudioServer")
