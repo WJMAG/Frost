@@ -3,7 +3,10 @@ package host.minestudio.frost
 import host.minestudio.frost.api.shards.ShardManager
 import host.minestudio.frost.impl.ConnSet
 import host.minestudio.frost.impl.SocketIO
-import host.minestudio.frost.socket.SocketAuth
+import host.minestudio.frost.impl.SocketListener
+import host.minestudio.frost.util.request
+import io.sentry.Sentry
+import io.socket.client.Ack
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
@@ -13,9 +16,8 @@ import net.minestom.server.extras.bungee.BungeeCordProxy
 import net.minestom.server.extras.velocity.VelocityProxy
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.block.Block
+import org.json.JSONObject
 import java.io.File
-import java.nio.file.Path
-import kotlin.system.exitProcess
 
 lateinit var SERVER: MinecraftServer
 lateinit var socket: SocketIO
@@ -24,36 +26,62 @@ lateinit var logger: org.slf4j.Logger
 lateinit var spawnWorld: InstanceContainer
 
 const val onlineMode = true
+val API_URL = "${System.getenv("API_HOST")}"
 
 fun main() {
     logger = org.slf4j.LoggerFactory.getLogger("MinestudioServer")
     SERVER = MinecraftServer.init()
 
+    Sentry.init { options ->
+        options.dsn = "https://bb8e8d5a1c3b49faa0d189ace27d4bd9@sentry.minestudio.dev/5"
+    }
+
     if(onlineMode) {
-        val gatewayHost = System.getenv("GATEWAY_HOST").replace("http://", "").replace("https://", "")
+        val apiHost = API_URL.replace("http://", "").replace("https://", "")
         socket = SocketIO.connect(
             ConnSet(
-                gatewayHost.split(":")[0],
+                apiHost.split(":")[0],
                 // if there's a port, use it. Will be added to the url after a colon. Not an env variable
-                if (gatewayHost.contains(":")) {
-                    gatewayHost.split(":")[1].toInt()
+                if (apiHost.contains(":")) {
+                    apiHost.split(":")[1].toIntOrNull() ?: throw IllegalArgumentException("Invalid port number")
                 } else {
-                    80
+                    if (System.getenv("API_HOST").startsWith("https://")) {
+                        443
+                    } else {
+                        80
+                    }
                 }
             ),
-            false
+            API_URL.startsWith("https://")
         )!!
-        socket.io!!.on("ready") { args ->
-            Thread.ofVirtual().name("Setup Socket").start {
-                val auth = SocketAuth(socket).authenticate()
-                if (!auth) {
-                    logger.error("Failed to authenticate with the API. Killing process.")
-                    exitProcess(1)
-                } else {
-                    logger.info("Authenticated with the GatewayAPI.")
+        socket.register(object: SocketListener {
+            override fun listen(objects: Array<Any?>?, callback: Ack?) {
+                val firstObject = objects?.firstOrNull() ?: throw IllegalArgumentException("First object cannot be null")
+                if(firstObject is JSONObject) {
+                    val json = firstObject
+                    val sessionId = json.getJSONObject("payload").getString("session_id")
+                    if(sessionId === null) throw IllegalArgumentException("Session ID cannot be null")
+                    val req = request(
+                        "$API_URL/api/v1/registration/sidecar",
+                        "POST",
+                        body = JSONObject().apply {
+                            put("ws_id", sessionId)
+                            put("server_id", System.getenv("SERVER_ID"))
+                            put("to_register", System.getenv("TO_REGISTER")?.toBoolean() == true)
+                            put("pod_ip", System.getenv("POD_IP"))
+                            put("pod_id", System.getenv("HOSTNAME"))
+                        }.toString().toByteArray()
+                    )
+                    logger.info("Registration response: $req")
                 }
             }
-        }
+
+            override val name: String?
+                get() = "welcome"
+            override val channel: String?
+                get() = "welcome"
+
+        })
 
         if(System.getenv("BUNGEE") !== null) {
             BungeeCordProxy.enable()
