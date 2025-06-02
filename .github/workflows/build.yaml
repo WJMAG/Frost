@@ -106,7 +106,7 @@ jobs:
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: minestudio
-          SENTRY_PROJECT: proxy
+          SENTRY_PROJECT: frost
         with:
           environment: production
           ignore_missing: true
@@ -116,7 +116,7 @@ jobs:
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: minestudio
-          SENTRY_PROJECT: lobby
+          SENTRY_PROJECT: frost
         run: |
           curl -sL https://sentry.io/get-cli/ | bash
           sentry-cli --url=https://sentry.minestudio.dev debug-files bundle-jvm --output bundle --debug-id $(node -e "console.log(require('crypto').randomUUID())") ./src
