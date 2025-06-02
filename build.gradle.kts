@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.1.20"
     id("com.gradleup.shadow") version "8.3.6"
+    id("io.sentry.jvm.gradle") version "3.12.0"
 }
 
 group = "host.minestudio"

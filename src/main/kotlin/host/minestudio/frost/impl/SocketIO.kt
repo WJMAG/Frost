@@ -47,6 +47,8 @@ object SocketIO {
     var io: Socket? = null
     private val pendingRegistration: MutableList<SocketListener> = ArrayList<SocketListener>()
 
+    private val registry: Registry<String, Emitter.Listener> = EclipseStore<String, Emitter.Listener>()
+
     /**
      * Connects to a socket server.
      *
@@ -60,6 +62,7 @@ object SocketIO {
         try {
             val opts = IO.Options().apply {
                 reconnection = true
+                transports = arrayOf("websocket")
             }
 
             println("Connecting to socket server: ${if (secure) "https" else "http"}://${connSet.ip}:${connSet.port}")
@@ -71,9 +74,9 @@ object SocketIO {
             io!!.connect()
             Thread.ofVirtual().name("SocketIO").start(Runnable {
                 for (listener in pendingRegistration) {
-                    io!!.on(listener.channel, Emitter.Listener { obj: Array<Any?>? ->
+                    registry.register(listener.channel!!, Emitter.Listener { obj: Array<Any?>? ->
                         if (Arrays.stream<Any?>(obj).toList().last() is Ack) {
-                            listener.listen(obj, obj?.lastOrNull() as? Ack)
+                            listener.listen(obj, obj?.lastOrNull() as Ack)
                         } else {
                             listener.listen(obj, null)
                         }
@@ -83,11 +86,17 @@ object SocketIO {
             io!!.onAnyIncoming { args ->
                 val event = args[0] as String
                 println("[-----] Received event: $event")
+                val handler = registry[event]
+                if(handler.isPresent) {
+                    // all but first argument
+                    handler.get().call(*args.drop(1).toTypedArray())
+                }
             }
             io!!.onAnyOutgoing { args ->
                 val event = args[0] as String
                 println("[-----] Emitting event: $event")
             }
+            socketEvents(io!!)
             return this
         } catch (e: Exception) {
             throw Error("Failed to connect to socket server: " + e.message)
@@ -102,19 +111,14 @@ object SocketIO {
     @Suppress("unused")
     fun register(listener: SocketListener) {
         if (io != null) {
-            if (!io!!.connected()) {
-                println("Adding listener ${listener.name} to pending registration")
-                pendingRegistration.add(listener)
-            } else {
-                println("Registering listener ${listener.name}")
-                io!!.on(listener.channel, Emitter.Listener { obj: Array<Any?>? ->
-                    if (Arrays.stream<Any?>(obj).toList().last() is Ack) {
-                        listener.listen(obj, obj?.lastOrNull() as? Ack)
-                    } else {
-                        listener.listen(obj, null)
-                    }
-                })
-            }
+            println("Registering listener ${listener.name}")
+            registry.register(listener.channel!!, Emitter.Listener { obj: Array<Any?>? ->
+                if (Arrays.stream<Any?>(obj).toList().last() is Ack) {
+                    listener.listen(obj, obj?.lastOrNull() as? Ack)
+                } else {
+                    listener.listen(obj, null)
+                }
+            })
         } else {
             println("SocketIO is not connected. Adding listener ${listener.name} to pending registration")
             pendingRegistration.add(listener)
@@ -161,6 +165,7 @@ object SocketIO {
 
     class SocketAcknowledgement(private val cb: SocketCallback) : AckWithTimeout(10000) {
         override fun onTimeout() {
+            println("[DEBUG] Socket acknowledgement timed out")
             cb.call(JSONObject().put("success", false))
         }
 
@@ -173,6 +178,34 @@ object SocketIO {
                 else -> null
             }
             cb.call(response)
+        }
+    }
+
+    private fun socketEvents(io: Socket) {
+        io.on("connect") { args ->
+            println("[SOCKET EVENT] Socket connected")
+        }
+        io.on("error") { args ->
+            println("[SOCKET EVENT] Socket error: ${args[0]}")
+        }
+        io.on("disconnect") { args ->
+            println("[SOCKET EVENT] Socket disconnected")
+            try {
+                io.disconnect()
+                io.close()
+                io.connect()
+            } catch(e: Exception) {
+                println("[SOCKET EVENT] Socket disconnect error: ${e.message}")
+            }
+        }
+        io.on("reconnect") { number ->
+            println("[SOCKET EVENT] Socket reconnected on attempt no. $number")
+        }
+        io.on("reconnecting") { number ->
+            println("[SOCKET EVENT] Socket reconnecting on attempt no. $number")
+        }
+        io.on("reconnect_failed") { args ->
+            println("[SOCKET EVENT] Socket reconnect failed")
         }
     }
 }
