@@ -29,14 +29,19 @@ const val onlineMode = true
 val API_URL = "${System.getenv("API_HOST")}"
 
 fun main() {
+    if(API_URL.isEmpty() || System.getenv("API_HOST") == null) {
+        throw IllegalArgumentException("API_HOST environment variable is not set. Please set it to the MineStudio API URL.")
+    }
     logger = org.slf4j.LoggerFactory.getLogger("MinestudioServer")
     SERVER = MinecraftServer.init()
 
+    logger.info("Setting up Sentry...")
     Sentry.init { options ->
         options.dsn = "https://bb8e8d5a1c3b49faa0d189ace27d4bd9@sentry.minestudio.dev/5"
     }
 
     if(onlineMode) {
+        logger.info("Online Mode is enabled. Connecting to the MineStudio API.")
         val apiHost = API_URL.replace("http://", "").replace("https://", "")
         socket = SocketIO.connect(
             ConnSet(
@@ -84,19 +89,24 @@ fun main() {
         })
 
         if(System.getenv("BUNGEE") !== null) {
+            logger.info("BungeeCord Proxy is enabled. Connecting to BungeeCord.")
             BungeeCordProxy.enable()
         } else if(System.getenv("VELOCITY") !== null) {
+            logger.info("Velocity Proxy is enabled. Connecting to Velocity.")
             VelocityProxy.enable(System.getenv("VELOCITY"))
         } else {
+            logger.info("No proxy is enabled. Using MojangAuth for authentication.")
             MojangAuth.init()
         }
     }
 
-
-
+    logger.info("Setting up the Demo World...")
     demoWorld()
+
+    logger.info("Setting up Events")
     events()
 
+    logger.info("Setting up ShardManager...")
     ShardManager().setup(File(System.getProperty("user.dir")))
 
     MinecraftServer.setBrandName("§bFrost §7(§aMineStudio§7)§f")
