@@ -18,6 +18,7 @@ import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.block.Block
 import org.json.JSONObject
 import java.io.File
+import kotlin.system.exitProcess
 
 lateinit var SERVER: MinecraftServer
 lateinit var socket: SocketIO
@@ -78,6 +79,12 @@ fun main() {
                         }.toString().toByteArray()
                     )
                     logger.info("Registration response: $req")
+                    if(req.get("success").asBoolean) {
+                        logger.info("Successfully registered with the API.")
+                    } else {
+                        logger.error("Failed to register with the API. Killing process.")
+                        exitProcess(1)
+                    }
                 }
             }
 
