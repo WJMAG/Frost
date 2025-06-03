@@ -71,10 +71,10 @@ fun main() {
                         "POST",
                         body = JSONObject().apply {
                             put("ws_id", sessionId)
-                            put("server_id", "\"${System.getenv("SERVER_ID")}\"")
+                            put("server_id", System.getenv("SERVER_ID"))
                             put("to_register", System.getenv("TO_REGISTER")?.toBoolean() == true)
-                            put("pod_ip", "\"${System.getenv("POD_IP")}\"")
-                            put("pod_id", "\"${System.getenv("HOSTNAME")}\"")
+                            put("pod_ip", System.getenv("POD_IP"))
+                            put("pod_id", System.getenv("HOSTNAME"))
                         }.toString().toByteArray()
                     )
                     logger.info("Registration response: $req")
