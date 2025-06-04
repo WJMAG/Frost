@@ -62,14 +62,17 @@ object SocketIO {
         try {
             val opts = IO.Options().apply {
                 reconnection = true
+                reconnectionDelay = 1000
+                reconnectionDelayMax = 5000
+                reconnectionAttempts = 10
                 transports = arrayOf("websocket")
             }
 
             println("Connecting to socket server: ${if (secure) "https" else "http"}://${connSet.ip}:${connSet.port}")
             io = IO.socket(if (secure) {
-                "https://${connSet.ip}:${connSet.port}"
+                "https://${connSet.ip}:${connSet.port}/server"
             } else {
-                "http://${connSet.ip}:${connSet.port}"
+                "http://${connSet.ip}:${connSet.port}/server"
             }, opts)
             io!!.connect()
             Thread.ofVirtual().name("SocketIO").start(Runnable {
@@ -190,13 +193,6 @@ object SocketIO {
         }
         io.on("disconnect") { args ->
             println("[SOCKET EVENT] Socket disconnected")
-            try {
-                io.disconnect()
-                io.close()
-                io.connect()
-            } catch(e: Exception) {
-                println("[SOCKET EVENT] Socket disconnect error: ${e.message}")
-            }
         }
         io.on("reconnect") { number ->
             println("[SOCKET EVENT] Socket reconnected on attempt no. $number")
