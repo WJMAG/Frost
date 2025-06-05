@@ -207,6 +207,9 @@ object SocketIO {
             else handleUnexpectedDisconnect(reason.firstOrNull()?.toString())
         }
 
+        io.on("connect_error") { handleUnexpectedDisconnect("Connection Error") }
+        io.on("connect_timeout") { handleUnexpectedDisconnect("Connection Timeout") }
+
         // Keep existing handlers
         io.on("error") { args -> l.error("[SOCKET] Error: ${args.firstOrNull()}") }
         io.on("reconnect") { attempt -> l.info("[SOCKET] Reconnected (attempt $attempt)") }
