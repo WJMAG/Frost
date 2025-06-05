@@ -70,7 +70,7 @@ object SocketIO {
                 reconnection = false
                 timeout = 1000 // single second
                 transports = arrayOf("websocket")
-                query = "pod_id=${System.getenv("POD_ID")}"
+                auth = mapOf("pod_id" to System.getenv("POD_ID"))
             }
 
             println("Connecting to socket server: ${if (secure) "https" else "http"}://${connSet.ip}:${connSet.port}")
