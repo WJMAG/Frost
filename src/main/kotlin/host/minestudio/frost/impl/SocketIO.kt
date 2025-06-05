@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.system.exitProcess
 
+
 /**
  * SocketIO is a program that allows for
  * transferring data between servers with
@@ -69,6 +70,7 @@ object SocketIO {
                 reconnection = false
                 timeout = 1000 // single second
                 transports = arrayOf("websocket")
+                query = "pod_id=${System.getenv("POD_ID")}"
             }
 
             println("Connecting to socket server: ${if (secure) "https" else "http"}://${connSet.ip}:${connSet.port}")
