@@ -95,6 +95,11 @@ fun main() {
 
         })
 
+        socket.io!!.on("heartbeat") { args ->
+            val ack = args.lastOrNull() as? Ack
+
+        }
+
         if(System.getenv("BUNGEE") !== null) {
             logger.info("BungeeCord Proxy is enabled. Connecting to BungeeCord.")
             BungeeCordProxy.enable()

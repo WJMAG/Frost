@@ -33,6 +33,7 @@ import org.json.JSONObject
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
+import kotlin.system.exitProcess
 
 /**
  * SocketIO is a program that allows for
@@ -48,6 +49,10 @@ object SocketIO {
     private val pendingRegistration: MutableList<SocketListener> = ArrayList<SocketListener>()
 
     private val registry: Registry<String, Emitter.Listener> = EclipseStore<String, Emitter.Listener>()
+    private var isApiRebooting = false
+    private var connectionAttempts = 0
+    private const val RECONNECT_JITTER_MAX_MS = 5000
+    private const val MAX_RETRIES = 3
 
     /**
      * Connects to a socket server.
@@ -61,10 +66,8 @@ object SocketIO {
 
         try {
             val opts = IO.Options().apply {
-                reconnection = true
-                reconnectionDelay = 1000
-                reconnectionDelayMax = 5000
-                reconnectionAttempts = 10
+                reconnection = false
+                timeout = 1000 // single second
                 transports = arrayOf("websocket")
             }
 
@@ -185,23 +188,50 @@ object SocketIO {
     }
 
     private fun socketEvents(io: Socket) {
-        io.on("connect") { args ->
-            println("[SOCKET EVENT] Socket connected")
+        io.on("connect") { _ ->
+            connectionAttempts = 0
+            isApiRebooting = false
+            l.info("[SOCKET] Connected to API")
         }
-        io.on("error") { args ->
-            println("[SOCKET EVENT] Socket error: ${args[0]}")
+
+        io.on("api-rebooting") { _ ->
+            isApiRebooting = true
+            l.info("[SOCKET] API reboot notification received")
+            io.disconnect() // Will trigger disconnect handler
         }
-        io.on("disconnect") { args ->
-            println("[SOCKET EVENT] Socket disconnected")
+
+        io.on("disconnect") { reason ->
+            if (isApiRebooting) handleApiReboot()
+            else handleUnexpectedDisconnect(reason.firstOrNull()?.toString())
         }
-        io.on("reconnect") { number ->
-            println("[SOCKET EVENT] Socket reconnected on attempt no. $number")
+
+        // Keep existing handlers
+        io.on("error") { args -> l.error("[SOCKET] Error: ${args.firstOrNull()}") }
+        io.on("reconnect") { attempt -> l.info("[SOCKET] Reconnected (attempt $attempt)") }
+    }
+
+    private fun handleApiReboot() {
+        val delay = 5000L + (0..RECONNECT_JITTER_MAX_MS).random()
+        l.info("[SOCKET] API reboot detected - reconnecting in ${delay}ms")
+
+        Thread.ofVirtual().start {
+            Thread.sleep(delay)
+            io?.connect() // Fresh connection attempt
         }
-        io.on("reconnecting") { number ->
-            println("[SOCKET EVENT] Socket reconnecting on attempt no. $number")
+    }
+
+    private fun handleUnexpectedDisconnect(reason: String?) {
+        if (++connectionAttempts > MAX_RETRIES) {
+            l.error("[SOCKET] Max retries reached ($MAX_RETRIES) - terminating pod")
+            exitProcess(1)
         }
-        io.on("reconnect_failed") { args ->
-            println("[SOCKET EVENT] Socket reconnect failed")
+
+        val delay = connectionAttempts * 1000L + (0..RECONNECT_JITTER_MAX_MS).random()
+        l.warn("[SOCKET] Disconnected (attempt $connectionAttempts/$MAX_RETRIES) - retrying in ${delay}ms")
+
+        Thread.ofVirtual().start {
+            Thread.sleep(delay)
+            io?.connect()
         }
     }
 }
