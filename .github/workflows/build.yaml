@@ -78,6 +78,11 @@ jobs:
           name: docker-image
           path: ${{ runner.temp }}
 
+      - name: Remove docker artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: docker-image
+
       - name: Load Docker Image
         run: docker load -i ${{ runner.temp }}/docker-image.tar
 
@@ -100,6 +105,11 @@ jobs:
         with:
           name: build
           path: ./
+
+      - name: Remove build artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: build
 
       - name: Create Sentry Release
         uses: getsentry/action-release@v3
