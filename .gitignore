@@ -43,3 +43,4 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+.run/Frost-1.0-SNAPSHOT.jar
