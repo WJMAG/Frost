@@ -1,7 +1,6 @@
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinJvm
 import com.vanniktech.maven.publish.SonatypeHost
-import java.time.Duration
 
 
 plugins {
@@ -50,7 +49,7 @@ mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
     coordinates("host.minestudio", "frost-snapshots", project.version.toString())
 
-
+    signAllPublications()
 
     pom {
         name.set("Frost API")
@@ -70,5 +69,26 @@ mavenPublishing {
                 email.set("zcoltonhirsch@gmail.com")
             }
         }
+        licenses {
+            license {
+                name.set("No License")
+                url.set("https://www.minestudio.host/")
+            }
+        }
+        scm {
+            url.set("scm:git:github.com/MineStudio-Host/Frost.git")
+            developerConnection.set("scm:git:ssh://github.com/MineStudio-Host/Frost.git")
+            connection.set("scm:git:github.com/MineStudio-Host/Frost.git")
+        }
+    }
+}
+
+signing {
+    val privateKey = System.getenv("GPG_PRIVATE_KEY")
+    val keyPassphrase = System.getenv("GPG_PRIVATE_KEY_PASSPHRASE")
+    if (privateKey != null && keyPassphrase != null) {
+        useInMemoryPgpKeys(privateKey, keyPassphrase)
+    } else {
+        logger.warn("GPG keys not found in environment variables. Signing will be skipped.")
     }
 }
