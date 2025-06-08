@@ -1,7 +1,11 @@
 package host.minestudio.frost.api.shards
 
+import host.minestudio.frost.api.config.ConfigSchema
+import host.minestudio.frost.api.shards.enum.LogLevel
+import host.minestudio.frost.api.shards.helper.LogEmitter
 import org.jetbrains.annotations.ApiStatus
 import java.io.File
+import java.lang.reflect.Method
 import java.net.URL
 
 /**
@@ -15,6 +19,15 @@ abstract class Shard {
      */
     @ApiStatus.Internal
     lateinit var loader: ShardClassLoader
+
+    /**
+     * The shard helper for this shard.
+     * You should never need to touch
+     * this, as it is used by methods
+     * within this class.
+     */
+    @ApiStatus.Internal
+    lateinit var shardHelper: ShardHelper
 
     /**
      * The data folder for this shard.
@@ -36,7 +49,7 @@ abstract class Shard {
     var info: ShardInfo? = null
 
     /**
-     * Whether or not this shard
+     * Whether this shard
      * has been through the setup
      * process.
      *
@@ -45,6 +58,16 @@ abstract class Shard {
      */
     @ApiStatus.Internal
     var isSetup = false
+
+    /**
+     * This is called prior to the
+     * [Shard.create] method. Allowing
+     * you to perform any pre-setup actions.
+     *
+     * This is called prior to commands
+     * being registered to the server.
+     */
+    open fun presetup() {}
 
     /**
      * The setup method for this shard.
@@ -77,5 +100,37 @@ abstract class Shard {
     @get:ApiStatus.Internal
     val jarLocation: URL?
         get() = this.javaClass.protectionDomain.codeSource.location
+
+    /**
+     * Publish a configuration schema to
+     * the dashboard. This allows users
+     * to configure your shard without
+     * requiring a file.
+     *
+     * This should be called on [Shard.create]
+     * every time the shard boots. This
+     * does support updates, so you should
+     * run this method every time the shard
+     * boots to ensure the latest schema is
+     * applied.
+     *
+     * @param schema The configuration schema to publish
+     */
+    protected fun publishConfigSchema(schema: ConfigSchema) {
+        if(!isSetup) {
+            throw IllegalStateException("Shard is not setup yet.")
+        }
+        this.shardHelper.registerConfigSchema(schema)
+    }
+
+    fun getLogEmitter(): LogEmitter {
+        if (!isSetup) {
+            throw IllegalStateException("Shard is not setup yet.")
+        }
+        val logger: (LogLevel, String) -> Unit = { level, message ->
+            this.shardHelper.emitLog(level, message)
+        }
+        return LogEmitter(logger)
+    }
 
 }

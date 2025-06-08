@@ -19,7 +19,7 @@ class ShardManager {
 
     private val logger = LoggerFactory.getLogger(ShardManager::class.java)
     private val shards = HashMap<String, Shard>()
-    private val loadMetrics = LinkedHashMap<String, Pair<Long, Boolean>>() // <ShardName, <LoadTimeMS, Success>>
+    private val loadMetrics = LinkedHashMap<String, Pair<Long, Boolean>>()
 
     private lateinit var shardLoader: URLClassLoader
 
@@ -40,64 +40,28 @@ class ShardManager {
         }
     }
 
-    private fun logStep(phase: String, message: String) {
-        logger.info("┌─[$phase] ${message.uppercase()}")
-    }
-
-    private fun logSubStep(message: String, indentLevel: Int = 1) {
-        val indent = "│ ${"  ".repeat(indentLevel)}"
-        logger.info("$indent$message")
-    }
-
-    private fun printLoadMetrics() {
-        logger.info("╔══════════════════════════════════════╗")
-        logger.info("║          Shard Load Metrics           ║")
-        logger.info("╠══════════════════════════════════════╣")
-
-        loadMetrics.forEach { (name, metrics) ->
-            val status = if (metrics.second) "✓" else "✗"
-            logger.info("║ ${name.padEnd(25)}: ${"%.3fs".format(metrics.first/1000.0).padStart(7)} $status ║")
-        }
-
-        val totalTime = loadMetrics.values.sumOf { it.first }
-        val successCount = loadMetrics.values.count { it.second }
-        logger.info("╠══════════════════════════════════════╣")
-        logger.info("║ Total: ${"%.3fs".format(totalTime/1000.0).padStart(25)} | $successCount/${loadMetrics.size} loaded ║")
-        logger.info("╚══════════════════════════════════════╝")
-    }
-
-    fun setupShardLoader(dataDir: Path) {
+    private fun setupShardLoader(dataDir: Path) {
         try {
             val shardDir = File(dataDir.toFile(), "shards").apply {
-                if (!exists() || !isDirectory) {
-                    if (mkdirs()) {
-                        logSubStep("Created shard directory: $absolutePath")
-                    } else {
-                        throw IllegalStateException("Failed to create shard directory: $absolutePath")
-                    }
-                }
+                if (!exists() && mkdirs()) logSubStep("Created shard directory: $absolutePath")
+                require(isDirectory) { "Shard directory is not valid: $absolutePath" }
             }
 
-            shardDir.listFiles()?.let { jars ->
-                logSubStep("Discovered ${jars.size} potential shard(s)")
-                jars.forEach { jar ->
-                    logSubStep("Found: ${jar.name}", 2)
-                }
+            val jars = shardDir.listFiles().orEmpty()
+            logSubStep("Discovered ${jars.size} potential shard(s)")
+            jars.forEach { logSubStep("Found: ${it.name}", 2) }
 
-                shardLoader = ShardClassLoader(
-                    jars.map { it.toURI().toURL() }.toTypedArray(),
-                    this::class.java.classLoader,
-                    dataDir.toFile()
-                )
-            } ?: run {
-                logSubStep("No shards found in directory", 1)
-            }
+            shardLoader = ShardClassLoader(
+                jars.map { it.toURI().toURL() }.toTypedArray(),
+                this::class.java.classLoader,
+                dataDir.toFile()
+            )
         } catch (e: Exception) {
             logger.error("│   [!] FAILED TO INITIALIZE SHARD LOADER", e)
         }
     }
 
-    fun loadAndInstallShards(dataDir: Path) {
+    private fun loadAndInstallShards(dataDir: Path) {
         try {
             val serviceLoader = ServiceLoader.load(Shard::class.java, shardLoader)
             logSubStep("Service loader prepared - ${serviceLoader.count()} shard(s) detected")
@@ -107,55 +71,23 @@ class ShardManager {
                 var shardName = shard.info?.name ?: "UNKNOWN"
 
                 try {
-                    logStep("SHARD", "Processing ${shard.jarLocation?.file?.split("/")?.last() ?: "UNKNOWN"}")
-
-                    // Load core shard
-                    logSubStep("Loading shard classes")
-                    Thread.currentThread().contextClassLoader = shardLoader
-                    shard.apply {
-                        loader = ShardClassLoader(arrayOf(jarLocation), ShardManager::class.java.classLoader, dataDir.toFile())
-                        info = try {
-                            val config = shard.javaClass.getAnnotation<ShardConfig>(ShardConfig::class.java)
-                            ShardInfo(
-                                id = config.id,
-                                name = config.name,
-                                version = config.version,
-                                description = "unused",
-                                deps = config.deps.toList()
-                            )
-                        } catch (e: Exception) {
-                            logger.error("│   [!] FAILED TO LOAD SHARD INFO", e)
-                            throw e
-                        }
-                        dataFolder = dataDir.toFile()
-                    }
+                    logStep("SHARD", "Processing ${shard.jarLocation?.file?.substringAfterLast('/') ?: "UNKNOWN"}")
+                    setupShardContext(shard, dataDir)
                     shardName = shard.info?.name ?: "UNKNOWN"
-                    Thread.currentThread().contextClassLoader = this::class.java.classLoader
-
-                    if (shard.info == null) {
-                        throw IllegalStateException("Shard info not found (invalid/missing ShardConfig annotation?)")
-                    }
 
                     logSubStep("Metadata loaded: ${shard.info!!.name} v${shard.info!!.version}")
-
-                    // Load dependencies
-                    logSubStep("Resolving dependencies")
                     loadDependenciesForShard(shard, dataDir)
-
-                    // Install shard
-                    logSubStep("Installing shard components")
                     installShard(shard)
 
-                    // Record success
                     val loadTime = System.currentTimeMillis() - timerStart
-                    loadMetrics[shardName] = Pair(loadTime, true)
-                    logSubStep("✓ Load completed in ${"%.3f".format(loadTime/1000.0)}s")
+                    loadMetrics[shardName] = loadTime to true
+                    logSubStep("✓ Load completed in ${"%.3f".format(loadTime / 1000.0)}s")
 
                     shards[shard.info!!.id] = shard
                 } catch (e: Exception) {
                     val loadTime = System.currentTimeMillis() - timerStart
-                    loadMetrics[shardName] = Pair(loadTime, false)
-                    logger.error("│   [!] FAILED TO LOAD SHARD (after ${"%.3f".format(loadTime/1000.0)}s)", e)
+                    loadMetrics[shardName] = loadTime to false
+                    logger.error("│   [!] FAILED TO LOAD SHARD (after ${"%.3f".format(loadTime / 1000.0)}s)", e)
                 } finally {
                     logger.info("└──────────────────────────────────────")
                 }
@@ -165,98 +97,105 @@ class ShardManager {
         }
     }
 
+    private fun setupShardContext(shard: Shard, dataDir: Path) {
+        Thread.currentThread().contextClassLoader = shardLoader
+
+        val shardInfo = shard.javaClass.getAnnotation(ShardConfig::class.java)?.let {
+            ShardInfo(it.name, it.id, it.version, "unused", it.deps.toList())
+        } ?: throw IllegalStateException("ShardConfig annotation missing on ${javaClass.name}")
+
+        shard.apply {
+            loader = ShardClassLoader(arrayOf(jarLocation), ShardManager::class.java.classLoader, dataDir.toFile())
+            info = shardInfo
+            dataFolder = dataDir.toFile()
+            shardHelper = ShardHelperImpl(shardInfo.id, shardInfo.name)
+        }
+
+        Thread.currentThread().contextClassLoader = this::class.java.classLoader
+    }
+
     private fun loadDependenciesForShard(shard: Shard, dataDir: Path) {
         val timerStart = System.currentTimeMillis()
         try {
             val resolver = DirectMavenResolver()
-            val depLoader = try {
+            val loaders = runCatching {
                 ServiceLoader.load(ShardDependencyLoader::class.java, shard.loader)
-            } catch (e: ClassNotFoundException) {
+            }.getOrElse {
                 logSubStep("No dependency loader specified - skipping", 2)
                 return
             }
 
-            if(depLoader.count() == 0) {
+            if (loaders.count() == 0) {
                 logSubStep("No dependency loader found - skipping", 2)
                 return
             }
-            if(depLoader.count() > 1) {
-                logSubStep("Multiple dependency loaders found - using the first one", 2)
-            }
-            logSubStep("Using dependency loader: ${depLoader.first().javaClass.name}", 2)
-            depLoader.first().loadDependencies(resolver)
+
+            logSubStep("Using dependency loader: ${loaders.first().javaClass.name}", 2)
+            loaders.first().loadDependencies(resolver)
 
             val loadTime = System.currentTimeMillis() - timerStart
-            logSubStep("Dependencies resolved in ${"%.3f".format(loadTime/1000.0)}s", 2)
+            logSubStep("Dependencies resolved in ${"%.3f".format(loadTime / 1000.0)}s", 2)
         } catch (e: Exception) {
             logger.error("│     [!] DEPENDENCY RESOLUTION FAILED", e)
-            throw e // Re-throw to mark shard as failed
+            throw e
         }
     }
 
     private fun installShard(shard: Shard) {
         val timerStart = System.currentTimeMillis()
         try {
-            val info = shard.info!!
+            shard.info?.deps.orEmpty().forEach { dep ->
+                val depShard = shards[dep]
+                requireNotNull(depShard) { "Missing dependency: $dep" }
 
-            // Handle dependencies
-            if (!info.deps.isNullOrEmpty()) {
-                val deps = info.deps!!
-                logSubStep("Checking ${deps.size} dependencies", 2)
-                deps.forEach { dep ->
-                    when {
-                        shards[dep] == null -> {
-                            logSubStep("Missing dependency: $dep", 3)
-                            throw IllegalStateException("Dependency $dep not found")
-                        }
-                        shards[dep]!!.info!!.deps?.contains(info.id) == true -> {
-                            logSubStep("Circular dependency: $dep", 3)
-                            throw IllegalStateException("Circular dependency with $dep")
-                        }
-                        !shards[dep]!!.isSetup -> {
-                            logSubStep("Initializing dependency: $dep", 3)
-                            initializeShard(shards[dep]!!)
-                        }
-                    }
+                if (depShard.info?.deps?.contains(shard.info!!.id) == true)
+                    throw IllegalStateException("Circular dependency with $dep")
+
+                if (!depShard.isSetup) {
+                    logSubStep("Initializing dependency: $dep", 3)
+                    initializeShard(depShard)
                 }
             }
 
-            // Initialize main shard
             initializeShard(shard)
 
             val loadTime = System.currentTimeMillis() - timerStart
-            logSubStep("Installation completed in ${"%.3f".format(loadTime/1000.0)}s", 2)
+            logSubStep("Installation completed in ${"%.3f".format(loadTime / 1000.0)}s", 2)
         } catch (e: Exception) {
             logger.error("│     [!] INSTALLATION FAILED", e)
-            throw e // Re-throw to mark shard as failed
+            throw e
         }
     }
 
     private fun initializeShard(shard: Shard) {
-        shard.create()
+        shard.presetup()
         logger.info("│   Loading commands...")
+
         val commandLoader = ShardCommandLoader(shard.loader, logger)
         val commands = commandLoader.loadCommands()
 
         if (commands.isNotEmpty()) {
             logger.info("│   ┌─ Commands Registered ────────────")
             commands.forEach { cmd ->
-                val minestomCommand = ShardCommandLoader.MinestomCommand(cmd)
-                MinecraftServer.getCommandManager().register(minestomCommand)
+                val minestomCmd = ShardCommandLoader.MinestomCommand(cmd)
+                MinecraftServer.getCommandManager().register(minestomCmd)
+
                 logger.info("│   ├─ ${cmd.name.padEnd(15)} (${cmd.aliases.joinToString(", ")})")
-                cmd.arguments?.forEach { arg ->
-                    logger.info("│   │  └─ ${arg.id.padEnd(15)} - ${arg.javaClass.name.split(".").last()}")
+                cmd.arguments?.forEach {
+                    logger.info("│   │  └─ ${it.id.padEnd(15)} - ${it.javaClass.simpleName}")
                 }
                 cmd.subcommands?.values?.forEach { sub ->
                     logger.info("│   │  ◦ ${sub.path.padEnd(15)} - ${sub.description.take(80)}")
-                    sub.arguments?.forEach { arg ->
-                        logger.info("│   │  │  └─ ${arg.id.padEnd(15)} - ${arg.javaClass.name.split(".").last()}")
+                    sub.arguments?.forEach {
+                        logger.info("│   │  │  └─ ${it.id.padEnd(15)} - ${it.javaClass.simpleName}")
                     }
                 }
             }
             logger.info("│   └─────────────────────────────────")
         }
+
         shard.isSetup = true
+        shard.create()
     }
 
     fun trashModules() {
@@ -270,6 +209,32 @@ class ShardManager {
             }
         }
         logger.info("└──────────────────────────────────────")
+    }
+
+    private fun printLoadMetrics() {
+        logger.info("╔══════════════════════════════════════╗")
+        logger.info("║          Shard Load Metrics           ║")
+        logger.info("╠══════════════════════════════════════╣")
+
+        loadMetrics.forEach { (name, metrics) ->
+            val status = if (metrics.second) "✓" else "✗"
+            logger.info("║ ${name.padEnd(25)}: ${"%.3fs".format(metrics.first / 1000.0).padStart(7)} $status ║")
+        }
+
+        val totalTime = loadMetrics.values.sumOf { it.first }
+        val successCount = loadMetrics.values.count { it.second }
+
+        logger.info("╠══════════════════════════════════════╣")
+        logger.info("║ Total: ${"%.3fs".format(totalTime / 1000.0).padStart(25)} | $successCount/${loadMetrics.size} loaded ║")
+        logger.info("╚══════════════════════════════════════╝")
+    }
+
+    private fun logStep(phase: String, message: String) {
+        logger.info("┌─[$phase] ${message.uppercase()}")
+    }
+
+    private fun logSubStep(message: String, indentLevel: Int = 1) {
+        logger.info("│ ${"  ".repeat(indentLevel)}$message")
     }
 
     data class CommandOpts(

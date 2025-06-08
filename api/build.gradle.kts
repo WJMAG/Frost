@@ -8,6 +8,7 @@ plugins {
     id("org.jetbrains.dokka") version "2.0.0"
     id("com.vanniktech.maven.publish") version "0.32.0"
     signing
+    kotlin("plugin.serialization") version "1.9.0"
 }
 
 group = "host.minestudio"
@@ -28,6 +29,8 @@ dependencies {
     compileOnly("org.apache.maven.resolver:maven-resolver-transport-file:1.9.22")
     compileOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.22")
     compileOnly("org.apache.maven.resolver:maven-resolver-transport-classpath:1.9.22")
+
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0") // JSON SERIALIZER
 }
 
 mavenPublishing {
