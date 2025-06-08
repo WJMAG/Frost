@@ -42,7 +42,7 @@ data class InputConfig(
     override val id: String,
     override val label: String,
     override val description: String? = null,
-    val inputType: String? = null,
+    val inputType: InputType? = null,
     val placeholder: String? = null,
     override val defaultValue: JsonElement? = null,
     val suffix: InputSuffix? = null,
