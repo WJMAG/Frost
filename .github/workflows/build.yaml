@@ -115,7 +115,7 @@ jobs:
       - name: Publish to Central via Build
         if: github.repository_owner == 'MineStudio-Host'
         run: |
-          ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
+          ./gradlew publishToMavenCentral --no-configuration-cache
           echo "Version: ${VERSION}" >> $GITHUB_STEP_SUMMARY
         env:
           VERSION: ${{ steps.vars.outputs.short_commit_hash }}
