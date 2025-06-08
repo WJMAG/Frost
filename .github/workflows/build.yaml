@@ -3,6 +3,7 @@ name: Build and Deploy Frost
 on:
   push:
     branches: [main]
+    paths: [ 'api/**', 'src/**', 'test-shard/**' ]
   pull_request:
 
 concurrency:
