@@ -19,7 +19,9 @@ jobs:
   build:
     runs-on: arc-runner-set
     outputs:
-      docker_image: ${{ steps.build_docker.outputs.tags }}
+      image_tag: ${{ steps.tag_image.outputs.tag }}
+    permissions:
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,58 +38,6 @@ jobs:
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
-        id: build_docker
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64
-          push: false
-          tags: ${{ env.IMAGE_NAME }}:latest
-          outputs: type=docker,dest=${{ runner.temp }}/docker-image.tar
-
-      - name: Upload Docker image
-        if: github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-image
-          path: ${{ runner.temp }}/docker-image.tar
-
-      - name: Upload build directory
-        if: github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: ./build
-
-  deploy:
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    runs-on: arc-runner-set
-    permissions:
-      packages: write
-      contents: read
-    steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Download Docker image
-        uses: actions/download-artifact@v4
-        with:
-          name: docker-image
-          path: ${{ runner.temp }}
-
-      - name: Remove docker artifact
-        uses: geekyeggo/delete-artifact@v5
-        with:
-          name: docker-image
-
-      - name: Load Docker Image
-        run: docker load -i ${{ runner.temp }}/docker-image.tar
-
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
@@ -95,23 +45,35 @@ jobs:
           username: ${{ secrets.REPO_PRIVATE_USER }}
           password: ${{ secrets.REPO_PRIVATE_PASS }}
 
-      - name: Push Docker image
+      - name: Generate tag
+        id: tag_image
         run: |
-          docker push ${{ env.IMAGE_NAME }}:latest
+          echo "tag=latest" >> $GITHUB_OUTPUT
+          # Or use a commit-based tag: echo "tag=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: ${{ env.IMAGE_NAME }}:${{ steps.tag_image.outputs.tag }}
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: arc-runner-set
+    permissions:
+      contents: read
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Download build directory
-        uses: actions/download-artifact@v4
-        with:
-          name: build
-          path: ./
-
-      - name: Remove build artifact
-        uses: geekyeggo/delete-artifact@v5
-        with:
-          name: build
 
       - name: Create Sentry Release
         uses: getsentry/action-release@v3
