@@ -13,12 +13,12 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
 
-    compileOnly(project(":api"))
+    compileOnly("host.minestudio:frost-snapshots:39b860741c")
     compileOnly("net.minestom:minestom-snapshots:87f6524aeb")
     compileOnly("com.google.auto.service:auto-service:1.1.1")
     ksp("dev.zacsweers.autoservice:auto-service-ksp:1.2.0")
 
-    compileOnly("org.apache.maven.resolver:maven-resolver-impl:1.9.22")
+    compileOnly("org.apache.maven.resolver:maven-resolver-impl:1.9.23")
 }
 
 tasks.test {

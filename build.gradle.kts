@@ -3,7 +3,7 @@ import java.time.Duration
 plugins {
     kotlin("jvm") version "2.1.21"
     id("com.gradleup.shadow") version "8.3.6"
-    id("io.sentry.jvm.gradle") version "3.12.0"
+    id("io.sentry.jvm.gradle") version "3.14.0"
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
@@ -30,10 +30,10 @@ dependencies {
     implementation("com.google.auto.service:auto-service:1.1.1")             // AUTO SERVICE
 
     implementation("org.apache.maven:maven-resolver-provider:3.9.9")
-    implementation("org.apache.maven.resolver:maven-resolver-impl:1.9.22")
+    implementation("org.apache.maven.resolver:maven-resolver-impl:1.9.23")
     implementation("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.22")
     implementation("org.apache.maven.resolver:maven-resolver-transport-file:1.9.22")
-    implementation("org.apache.maven.resolver:maven-resolver-transport-http:1.9.22")
+    implementation("org.apache.maven.resolver:maven-resolver-transport-http:1.9.23")
     implementation("org.apache.maven.resolver:maven-resolver-transport-classpath:1.9.22")
 
     implementation(project(":api"))
