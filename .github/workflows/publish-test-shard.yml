@@ -33,6 +33,7 @@ jobs:
           rm -rf temp-clone-path/src
           rm -rf temp-clone-path/build.gradle.kts
           cp -r test-shard/* temp-clone-path
+          sed -i 's/compileOnly(project(":api"))//g' temp-clone-path/build.gradle.kts
       
       - name: Push to Target Repository
         uses: tech-thinker/push-to-repo@main
