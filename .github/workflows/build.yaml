@@ -95,31 +95,3 @@ jobs:
           curl -sL https://sentry.io/get-cli/ | bash
           sentry-cli --url=https://sentry.minestudio.dev debug-files bundle-jvm --output bundle --debug-id $(node -e "console.log(require('crypto').randomUUID())") ./src
           sentry-cli --url=https://sentry.minestudio.dev debug-files upload --type jvm bundle
-
-  sonatype:
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    runs-on: arc-runner-set
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-      - id: vars
-        run: echo "short_commit_hash=${GITHUB_SHA::10}" >> $GITHUB_OUTPUT
-      - name: Publish to Central via Build
-        if: github.repository_owner == 'MineStudio-Host'
-        run: |
-          ./gradlew publishToMavenCentral --no-configuration-cache
-          echo "Version: ${VERSION}" >> $GITHUB_STEP_SUMMARY
-        env:
-          VERSION: ${{ steps.vars.outputs.short_commit_hash }}
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_PASSWORD }}
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PRIVATE_KEY_PASSPHRASE: ${{ secrets.GPG_KEY_PASSPHRASE }}
