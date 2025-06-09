@@ -31,7 +31,7 @@ dependencies {
     // Exposed APIs
     api("org.apache.maven.resolver:maven-resolver-impl:1.9.23")
     api("net.minestom:minestom-snapshots:87f6524aeb") // MINESTOM
-    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0") // JSON SERIALIZER
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1") // JSON SERIALIZER
     api("com.google.auto.service:auto-service:1.1.1") // AUTO SERVICE
 }
 
