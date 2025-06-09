@@ -1,7 +1,9 @@
-package host.minestudio.frost.api.shards
+package host.minestudio.frost.api.shards.impl
 
 import host.minestudio.frost.api.config.ConfigSchema
 import host.minestudio.frost.api.shards.enum.LogLevel
+import host.minestudio.frost.api.shards.helper.ShardHelper
+import host.minestudio.frost.api.shards.helper.StorageService
 import host.minestudio.frost.socket
 
 class ShardHelperImpl(
@@ -16,6 +18,10 @@ class ShardHelperImpl(
 
     override fun emitLog(level: LogLevel, message: String) {
         socket.emit("log", shardName, level.name, message)
+    }
+
+    override fun getStorageService(): StorageService {
+        return StorageServiceImpl()
     }
 
 }

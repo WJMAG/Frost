@@ -3,6 +3,8 @@ package host.minestudio.frost.api.shards
 import host.minestudio.frost.api.config.ConfigSchema
 import host.minestudio.frost.api.shards.enum.LogLevel
 import host.minestudio.frost.api.shards.helper.LogEmitter
+import host.minestudio.frost.api.shards.helper.ShardHelper
+import host.minestudio.frost.api.shards.helper.StorageService
 import org.jetbrains.annotations.ApiStatus
 import java.io.File
 import java.lang.reflect.Method
@@ -15,7 +17,8 @@ abstract class Shard {
 
     /**
      * The classloader for this shard.
-     * Generally safe to never touch this.
+     * Never touch this. It will break
+     * your entire shard if modified.
      */
     @ApiStatus.Internal
     lateinit var loader: ShardClassLoader
@@ -121,6 +124,13 @@ abstract class Shard {
             throw IllegalStateException("Shard is not setup yet.")
         }
         this.shardHelper.registerConfigSchema(schema)
+    }
+
+    protected fun getStorageService(): StorageService {
+        if (!isSetup) {
+            throw IllegalStateException("Shard is not setup yet.")
+        }
+        return this.shardHelper.getStorageService()
     }
 
     fun getLogEmitter(): LogEmitter {

@@ -3,6 +3,7 @@ package host.minestudio.frost.api.shards
 import host.minestudio.frost.api.dependencies.resolver.DirectMavenResolver
 import host.minestudio.frost.api.shards.annotations.ShardConfig
 import host.minestudio.frost.api.shards.command.ShardCommand
+import host.minestudio.frost.api.shards.impl.ShardHelperImpl
 import net.minestom.server.MinecraftServer
 import net.minestom.server.command.builder.arguments.Argument
 import org.slf4j.LoggerFactory

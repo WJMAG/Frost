@@ -21,16 +21,18 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
 
-    compileOnly("net.minestom:minestom-snapshots:87f6524aeb") // MINESTOM
-
+    // Internal dependencies
     compileOnly("org.apache.maven:maven-resolver-provider:3.9.9")
-    compileOnly("org.apache.maven.resolver:maven-resolver-impl:1.9.23")
     compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.22")
     compileOnly("org.apache.maven.resolver:maven-resolver-transport-file:1.9.22")
     compileOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.23")
     compileOnly("org.apache.maven.resolver:maven-resolver-transport-classpath:1.9.22")
 
+    // Exposed APIs
+    api("org.apache.maven.resolver:maven-resolver-impl:1.9.23")
+    api("net.minestom:minestom-snapshots:87f6524aeb") // MINESTOM
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0") // JSON SERIALIZER
+    api("com.google.auto.service:auto-service:1.1.1") // AUTO SERVICE
 }
 
 mavenPublishing {
