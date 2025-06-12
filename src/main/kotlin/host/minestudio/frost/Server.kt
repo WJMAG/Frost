@@ -5,7 +5,6 @@ import host.minestudio.frost.impl.ConnSet
 import host.minestudio.frost.impl.SocketIO
 import host.minestudio.frost.impl.SocketListener
 import host.minestudio.frost.util.request
-import io.sentry.Sentry
 import io.socket.client.Ack
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
@@ -35,11 +34,6 @@ fun main() {
     }
     logger = org.slf4j.LoggerFactory.getLogger("MinestudioServer")
     SERVER = MinecraftServer.init()
-
-    logger.info("Setting up Sentry...")
-    Sentry.init { options ->
-        options.dsn = "https://bb8e8d5a1c3b49faa0d189ace27d4bd9@sentry.minestudio.dev/5"
-    }
 
     if(onlineMode) {
         logger.info("Online Mode is enabled. Connecting to the MineStudio API.")

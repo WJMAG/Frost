@@ -60,39 +60,3 @@ jobs:
           platforms: linux/amd64
           push: ${{ github.ref == 'refs/heads/main' }}
           tags: ${{ env.IMAGE_NAME }}:${{ steps.tag_image.outputs.tag }}
-
-  deploy:
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    runs-on: arc-runner-set
-    permissions:
-      contents: read
-    steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Create Sentry Release
-        uses: getsentry/action-release@v3
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: minestudio
-          SENTRY_PROJECT: frost
-        with:
-          environment: production
-          ignore_missing: true
-          finalize: true
-
-      - name: Deploy Sentry Sourcemaps
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: minestudio
-          SENTRY_PROJECT: frost
-        run: |
-          curl -sL https://sentry.io/get-cli/ | bash
-          sentry-cli --url=https://sentry.minestudio.dev debug-files bundle-jvm --output bundle --debug-id $(node -e "console.log(require('crypto').randomUUID())") ./src
-          sentry-cli --url=https://sentry.minestudio.dev debug-files upload --type jvm bundle
