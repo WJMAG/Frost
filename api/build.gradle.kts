@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.dokka") version "2.0.0"
     id("com.vanniktech.maven.publish") version "0.32.0"
     signing
-    kotlin("plugin.serialization") version "1.9.0"
+    kotlin("plugin.serialization") version "1.9.25"
 }
 
 group = "host.minestudio"
@@ -23,7 +23,7 @@ dependencies {
 
     // Internal dependencies
     compileOnly("org.apache.maven:maven-resolver-provider:3.9.9")
-    compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.22")
+    compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.23")
     compileOnly("org.apache.maven.resolver:maven-resolver-transport-file:1.9.22")
     compileOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.23")
     compileOnly("org.apache.maven.resolver:maven-resolver-transport-classpath:1.9.22")
@@ -31,7 +31,7 @@ dependencies {
     // Exposed APIs
     api("org.apache.maven.resolver:maven-resolver-impl:1.9.23")
     api("net.minestom:minestom-snapshots:87f6524aeb") // MINESTOM
-    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0") // JSON SERIALIZER
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1") // JSON SERIALIZER
     api("com.google.auto.service:auto-service:1.1.1") // AUTO SERVICE
 }
 
