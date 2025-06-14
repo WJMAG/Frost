@@ -94,7 +94,6 @@ tasks.test {
 kotlin {
     jvmToolchain(21)
 }
-
 tasks.build {
     dependsOn("dokkaHtml")
 }
