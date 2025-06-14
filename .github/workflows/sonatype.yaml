@@ -1,4 +1,4 @@
-name: Build and Deploy Frost
+name: Deploy Frost API to Sonatype
 
 on:
   push:
