@@ -3,7 +3,7 @@ name: Deploy Frost API to Sonatype
 on:
   push:
     branches: [main]
-    paths: [ 'api/**' ]
+    paths: [ 'api/**', 'gradle/libs.versions.toml' ]
   pull_request:
 
 concurrency:

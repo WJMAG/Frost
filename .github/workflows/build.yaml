@@ -3,7 +3,7 @@ name: Build and Deploy Frost
 on:
   push:
     branches: [main]
-    paths: [ 'api/**', 'src/**', 'test-shard/**' ]
+    paths: [ 'api/**', 'src/**', 'test-shard/**', 'gradle/libs.versions.toml' ]
   pull_request:
 
 concurrency:
