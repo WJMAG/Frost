@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths: [ 'api/**', 'gradle/libs.versions.toml' ]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
