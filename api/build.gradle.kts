@@ -40,7 +40,7 @@ mavenPublishing {
         javadocJar = JavadocJar.Dokka("dokkaHtml"),
         sourcesJar = true
     ))
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
     coordinates("host.minestudio", "frost-snapshots", project.version.toString())
 
     signAllPublications()
