@@ -20,12 +20,12 @@ import java.io.File
 import kotlin.system.exitProcess
 
 lateinit var SERVER: MinecraftServer
-lateinit var socket: SocketIO
+var socket: SocketIO? = null
 lateinit var logger: org.slf4j.Logger
 
 lateinit var spawnWorld: InstanceContainer
 
-const val onlineMode = true
+val onlineMode = System.getenv("MINESTUDIO_ENABLED") != "false"
 val API_URL = "${System.getenv("API_HOST")}"
 
 fun main() {
@@ -34,6 +34,8 @@ fun main() {
     }
     logger = org.slf4j.LoggerFactory.getLogger("MinestudioServer")
     SERVER = MinecraftServer.init()
+
+    logger.info("MINESTUDIO_ENABLED is set to $onlineMode: ${System.getenv("MINESTUDIO_ENABLED")}")
 
     if(onlineMode) {
         logger.info("Online Mode is enabled. Connecting to the MineStudio API.")
@@ -54,7 +56,7 @@ fun main() {
             ),
             API_URL.startsWith("https://")
         )!!
-        socket.register(object: SocketListener {
+        socket!!.register(object: SocketListener {
             override fun listen(objects: Array<Any?>?, callback: Ack?) {
                 val firstObject = objects?.firstOrNull() ?: throw IllegalArgumentException("First object cannot be null")
                 if(firstObject is JSONObject) {
@@ -89,7 +91,7 @@ fun main() {
 
         })
 
-        socket.io!!.on("heartbeat") { args ->
+        socket!!.io!!.on("heartbeat") { args ->
             val ack = args.lastOrNull() as? Ack
 
         }
@@ -104,6 +106,8 @@ fun main() {
             logger.info("No proxy is enabled. Using MojangAuth for authentication.")
             MojangAuth.init()
         }
+    } else {
+        logger.info("Online Mode is disabled. Not authenticating with MineStudio API.")
     }
 
     logger.info("Setting up the Demo World...")

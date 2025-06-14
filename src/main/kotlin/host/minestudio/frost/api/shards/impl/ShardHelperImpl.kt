@@ -4,6 +4,7 @@ import host.minestudio.frost.api.config.ConfigSchema
 import host.minestudio.frost.api.shards.enum.LogLevel
 import host.minestudio.frost.api.shards.helper.ShardHelper
 import host.minestudio.frost.api.shards.helper.StorageService
+import host.minestudio.frost.onlineMode
 import host.minestudio.frost.socket
 
 class ShardHelperImpl(
@@ -12,12 +13,19 @@ class ShardHelperImpl(
 ) : ShardHelper {
 
     override fun registerConfigSchema(schema: ConfigSchema) {
-        socket.emit("config:register", shardId, shardName, schema.toJson())
-        println("Registered config schema for shard: $shardName: " + schema.toJson())
+        if(onlineMode) {
+            socket!!.emit("config:register", shardId, shardName, schema.toJson())
+            println("Registered config schema for shard: $shardName: " + schema.toJson())
+        } else {
+            println("WARN: Cannot register config without connection to MineStudio.")
+        }
     }
 
     override fun emitLog(level: LogLevel, message: String) {
-        socket.emit("log", shardName, level.name, message)
+        if(onlineMode)
+            socket!!.emit("log", shardName, level.name, message)
+        else
+            println(message)
     }
 
     override fun getStorageService(): StorageService {

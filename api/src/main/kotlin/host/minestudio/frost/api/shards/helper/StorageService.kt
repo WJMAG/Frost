@@ -22,6 +22,15 @@ interface StorageService {
     fun getData(storeName: String, key: String): CompletableFuture<Any?>
 
     /**
+     * Retrieves data from the storage service synchronously.
+     *
+     * @param storeName The name of the store from which the data will be retrieved.
+     * @param key The key under which the data is stored.
+     * @return The data associated with the key, or null if not found.
+     */
+    fun getDataSync(storeName: String, key: String): Any?
+
+    /**
      * Deletes data from the storage service.
      *
      * @param storeName The name of the store from which the data will be deleted.

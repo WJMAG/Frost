@@ -28,6 +28,9 @@ dependencies {
 
     implementation("com.google.auto.service:auto-service:1.1.1")             // AUTO SERVICE
 
+    // https://mvnrepository.com/artifact/org.yaml/snakeyaml
+    implementation("org.yaml:snakeyaml:2.4")
+
     implementation("org.apache.maven:maven-resolver-provider:3.9.10")
     implementation("org.apache.maven.resolver:maven-resolver-impl:1.9.23")
     implementation("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.23")
