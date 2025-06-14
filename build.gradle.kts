@@ -17,26 +17,21 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
 
-    implementation("org.slf4j:slf4j-api:2.0.17")                             // SLF4J API (Logging)
-    implementation("ch.qos.logback:logback-classic:1.5.18")                  // Logback implementation
-    implementation("ch.qos.logback:logback-core:1.5.18")                     // Logback core
+    implementation(libs.slf4j.api)
+    implementation(libs.logback.classic)
+    implementation(libs.logback.core)
+    implementation(libs.minestom)
+    implementation(libs.eclipse.collections)
+    implementation(libs.socket.io)
+    implementation(libs.auto.service)
+    implementation(libs.snakeyaml)
 
-    implementation("net.minestom:minestom-snapshots:42e0d21266")             // MINESTOM
-
-    implementation("org.eclipse.collections:eclipse-collections:12.0.0.M3")  // ECLIPSE COLLECTIONS
-    implementation("io.socket:socket.io-client:2.1.2")                       // SOCKET.IO
-
-    implementation("com.google.auto.service:auto-service:1.1.1")             // AUTO SERVICE
-
-    // https://mvnrepository.com/artifact/org.yaml/snakeyaml
-    implementation("org.yaml:snakeyaml:2.4")
-
-    implementation("org.apache.maven:maven-resolver-provider:3.9.10")
-    implementation("org.apache.maven.resolver:maven-resolver-impl:1.9.23")
-    implementation("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.23")
-    implementation("org.apache.maven.resolver:maven-resolver-transport-file:1.9.23")
-    implementation("org.apache.maven.resolver:maven-resolver-transport-http:1.9.23")
-    implementation("org.apache.maven.resolver:maven-resolver-transport-classpath:1.9.22")
+    implementation(libs.maven.resolver.provider)
+    implementation(libs.maven.resolver.impl)
+    implementation(libs.maven.resolver.connector)
+    implementation(libs.maven.resolver.file)
+    implementation(libs.maven.resolver.http)
+    implementation(libs.maven.resolver.classpath)
 
     implementation(project(":api"))
 }
