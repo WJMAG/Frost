@@ -7,6 +7,7 @@ import host.minestudio.frost.impl.SocketListener
 import host.minestudio.frost.util.request
 import io.socket.client.Ack
 import net.minestom.server.MinecraftServer
+import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
@@ -14,9 +15,11 @@ import net.minestom.server.extras.MojangAuth
 import net.minestom.server.extras.bungee.BungeeCordProxy
 import net.minestom.server.extras.velocity.VelocityProxy
 import net.minestom.server.instance.InstanceContainer
+import net.minestom.server.instance.anvil.AnvilLoader
 import net.minestom.server.instance.block.Block
 import org.json.JSONObject
 import java.io.File
+import kotlin.io.path.Path
 import kotlin.system.exitProcess
 
 lateinit var SERVER: MinecraftServer
@@ -127,19 +130,32 @@ fun main() {
 
 private fun demoWorld() {
     spawnWorld = MinecraftServer.getInstanceManager().createInstanceContainer()
-    spawnWorld.setBlock(Pos(0.0, 64.0, 0.0), Block.STONE)
+    val worldDir = Path("world").toFile()
+    if(!worldDir.exists()) {
+        spawnWorld.setBlock(0, 64, 0, Block.GRASS_BLOCK)
+    } else {
+        val loader = AnvilLoader(worldDir.toPath())
+        spawnWorld.chunkLoader = loader
+    }
 }
 
 private fun events() {
+    val spawnPointFile = File("points/spawn.json")
+    var spawnPoint = Pos(0.5, 66.0, 0.5)
+    if(spawnPointFile.exists()) {
+        val json = JSONObject(spawnPointFile.readText())
+        val x = json.getDouble("x")
+        val y = json.getDouble("y")
+        val z = json.getDouble("z")
+        spawnPoint = Pos(x, y, z)
+    }
     MinecraftServer.getGlobalEventHandler().addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
         val player = event.player
         event.spawningInstance = spawnWorld
-        event.player.respawnPoint = Pos(0.5, 66.0, 0.5)
+        event.player.respawnPoint = spawnPoint
     }
     MinecraftServer.getGlobalEventHandler().addListener(PlayerSpawnEvent::class.java) { event ->
         val player = event.player
-        player.teleport(Pos(0.5, 66.0, 0.5))
-        player.sendMessage("Welcome to a Minestudio SubServer!")
-        player.sendMessage("This is a demo world.")
+        player.teleport(spawnPoint)
     }
 }
