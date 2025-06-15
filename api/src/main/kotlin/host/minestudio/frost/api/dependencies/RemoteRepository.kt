@@ -20,6 +20,5 @@ data class RemoteRepository(
      */
     @ApiStatus.Internal
     fun toRemoteRepository(): RemoteRepository {
-        return RemoteRepository.Builder(null, null, "https://repo.maven.apache.org/maven2").build()
-    }
+        return RemoteRepository.Builder(url.hashCode().toString(), null, url).build()    }
 }

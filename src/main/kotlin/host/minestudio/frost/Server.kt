@@ -147,7 +147,9 @@ private fun events() {
         val x = json.getDouble("x")
         val y = json.getDouble("y")
         val z = json.getDouble("z")
-        spawnPoint = Pos(x, y, z)
+        val yaw = json.getDouble("yaw")
+        val pitch = json.getDouble("pitch")
+        spawnPoint = Pos(x, y, z, yaw.toFloat(), pitch.toFloat())
     }
     MinecraftServer.getGlobalEventHandler().addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
         val player = event.player

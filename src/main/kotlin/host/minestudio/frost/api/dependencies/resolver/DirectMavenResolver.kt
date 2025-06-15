@@ -52,6 +52,13 @@ class DirectMavenResolver : ClassPathLibrary, MavenResolver {
             throw RuntimeException(exception)
         }
 
+        this.repositories.put(
+            RemoteRepository.Builder(
+                "central", "default", "https://repo1.maven.org/maven2"
+            ).build(),
+            null
+        )
+
         this.repository = locator.getService(RepositorySystem::class.java)
         this.session = MavenRepositorySystemUtils.newSession()
 
@@ -79,7 +86,8 @@ class DirectMavenResolver : ClassPathLibrary, MavenResolver {
      */
     @Throws(LibraryLoadingException::class)
     override fun register(store: LibraryStore) {
-        val repos = this.repository.newResolutionRepositories(this.session, this.repositories.keys.stream().toList())
+        val repoList = this.repositories.keys.filterNotNull().toMutableList()
+        val repos = this.repository.newResolutionRepositories(this.session, repoList)
 
         try {
             for (dependency in this.dependencies.keys) {
@@ -119,6 +127,14 @@ class DirectMavenResolver : ClassPathLibrary, MavenResolver {
      */
     override fun addRepository(owningClass: Class<*>?, remoteRepository: host.minestudio.frost.api.dependencies.RemoteRepository) {
         this.repositories.put(remoteRepository.toRemoteRepository(), owningClass)
+    }
+
+    fun getDependencies(): Map<Dependency?, Class<*>?> {
+        return this.dependencies
+    }
+
+    fun getRepositories(): Map<RemoteRepository?, Class<*>?> {
+        return this.repositories
     }
 
     companion object {

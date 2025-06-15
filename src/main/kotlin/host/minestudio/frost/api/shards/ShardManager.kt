@@ -1,17 +1,21 @@
 package host.minestudio.frost.api.shards
 
+import host.minestudio.frost.api.dependencies.classpath.URLClassLoaderAccess
 import host.minestudio.frost.api.dependencies.resolver.DirectMavenResolver
+import host.minestudio.frost.api.dependencies.resolver.impl.SimpleLibraryStore
 import host.minestudio.frost.api.shards.annotations.ShardConfig
 import host.minestudio.frost.api.shards.command.ShardCommand
 import host.minestudio.frost.api.shards.impl.ShardHelperImpl
 import net.minestom.server.MinecraftServer
 import net.minestom.server.command.builder.arguments.Argument
+import org.apache.maven.model.Dependency
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.lang.reflect.Method
 import java.net.URLClassLoader
 import java.nio.file.Path
 import java.util.ServiceLoader
+import kotlin.io.path.exists
 
 val PLUGIN_REGEX = Regex("[0-9a-z-]+")
 
@@ -67,6 +71,7 @@ class ShardManager {
             val serviceLoader = ServiceLoader.load(Shard::class.java, shardLoader)
             logSubStep("Service loader prepared - ${serviceLoader.count()} shard(s) detected")
 
+            val shardLoaderToStores = mutableMapOf<ShardClassLoader, Pair<SimpleLibraryStore, DirectMavenResolver>>()
             serviceLoader.forEach { shard ->
                 val timerStart = System.currentTimeMillis()
                 var shardName = shard.info?.name ?: "UNKNOWN"
@@ -77,7 +82,13 @@ class ShardManager {
                     shardName = shard.info?.name ?: "UNKNOWN"
 
                     logSubStep("Metadata loaded: ${shard.info!!.name} v${shard.info!!.version}")
-                    loadDependenciesForShard(shard, dataDir)
+                    val resp = loadDependenciesForShard(shard)
+                    if (resp != null) {
+                        shardLoaderToStores[shard.loader] = resp.second
+                        logSubStep("Dependencies resolved with ${shard.loader.javaClass.simpleName}", 2)
+                    } else {
+                        logSubStep("No dependencies to resolve", 2)
+                    }
                     installShard(shard)
 
                     val loadTime = System.currentTimeMillis() - timerStart
@@ -91,6 +102,40 @@ class ShardManager {
                     logger.error("│   [!] FAILED TO LOAD SHARD (after ${"%.3f".format(loadTime / 1000.0)}s)", e)
                 } finally {
                     logger.info("└──────────────────────────────────────")
+                }
+            }
+
+            val allDependencies = shardLoaderToStores.flatMap { it.value.second.getDependencies().entries }
+            val allRepositories = shardLoaderToStores.flatMap { it.value.second.getRepositories().entries }
+
+            logger.info("-----------------[ Dependency Loader ]-----------------")
+            logger.info("")
+            logger.info("Loading {} dependencies for {} shard(s)", allDependencies.size, shards.size)
+            allDependencies.forEach { (dep, owningClass) ->
+                logger.info("│   ${dep?.artifact?.groupId}:${dep?.artifact?.artifactId ?: "UNKNOWN"}:${dep?.artifact?.version ?: "UNKNOWN"} (from ${owningClass?.name ?: "unknown"})")
+            }
+            logger.info("")
+            logger.info("Using {} repositories", allRepositories.size)
+            allRepositories.forEach { (repo, owningClass) ->
+                logger.info("│   ${repo?.url ?: "UNKNOWN"} (from ${owningClass?.name ?: "unknown"})")
+            }
+            logger.info("")
+            logger.info("-------------------------------------------------------")
+
+            shardLoaderToStores.forEach { it ->
+                val classLoader = it.key
+                val (store, resolver) = it.value
+                try {
+                    val access = URLClassLoaderAccess.create(classLoader)
+                    store.paths.forEach { it2 ->
+                        if(it2?.exists() != true) {
+                            logger.warn("│   [!] Library path does not exist: $it2")
+                            return@forEach
+                        }
+                        access.addURL(it2.toUri().toURL())
+                    }
+                } catch (e: Exception) {
+                    logger.error("│   [!] FAILED TO LIST LOADED LIBRARIES", e)
                 }
             }
         } catch (e: Exception) {
@@ -115,27 +160,32 @@ class ShardManager {
         Thread.currentThread().contextClassLoader = this::class.java.classLoader
     }
 
-    private fun loadDependenciesForShard(shard: Shard, dataDir: Path) {
+    private fun loadDependenciesForShard(shard: Shard): Pair<ShardClassLoader, Pair<SimpleLibraryStore, DirectMavenResolver>>? {
         val timerStart = System.currentTimeMillis()
         try {
-            val resolver = DirectMavenResolver()
             val loaders = runCatching {
                 ServiceLoader.load(ShardDependencyLoader::class.java, shard.loader)
             }.getOrElse {
                 logSubStep("No dependency loader specified - skipping", 2)
-                return
+                return null
             }
 
             if (loaders.count() == 0) {
                 logSubStep("No dependency loader found - skipping", 2)
-                return
+                return null
             }
 
-            logSubStep("Using dependency loader: ${loaders.first().javaClass.name}", 2)
-            loaders.first().loadDependencies(resolver)
+            val resolver = DirectMavenResolver()
+            val store = SimpleLibraryStore()
+            loaders.forEach {
+                logSubStep("Loading dependencies with ${it.javaClass.simpleName}", 2)
+                it.loadDependencies(resolver)
+            }
+            resolver.register(store)
 
             val loadTime = System.currentTimeMillis() - timerStart
             logSubStep("Dependencies resolved in ${"%.3f".format(loadTime / 1000.0)}s", 2)
+            return Pair(shard.loader, Pair(store, resolver))
         } catch (e: Exception) {
             logger.error("│     [!] DEPENDENCY RESOLUTION FAILED", e)
             throw e
