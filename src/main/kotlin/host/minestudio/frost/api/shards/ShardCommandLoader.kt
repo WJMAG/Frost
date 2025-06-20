@@ -13,15 +13,18 @@ import java.util.ServiceLoader
 
 class ShardCommandLoader(
     private val shardLoader: ShardClassLoader,
+    private val shard: Shard,
     private val logger: Logger
 ) {
+
     fun loadCommands(): List<ShardManager.CommandOpts> {
         logger.debug("│     Scanning for commands...")
 
         return try {
-            ServiceLoader.load(ShardCommand::class.java, shardLoader)
-                .mapNotNull { command ->
-                    processCommand(command).also { cmd ->
+            shard.shardHelper.commands
+                .onEach { it.shard = shard }
+                .mapNotNull {
+                    processCommand(it).also { cmd ->
                         logger.debug("│     Found command: ${cmd?.name ?: "INVALID"}")
                     }
                 }
@@ -149,7 +152,8 @@ class ShardCommandLoader(
 
 
     class MinestomCommand(
-        private val command: ShardManager.CommandOpts
+        private val command: ShardManager.CommandOpts,
+        private val shard: Shard
     ) : net.minestom.server.command.builder.Command(command.name) {
 
         init {
@@ -189,9 +193,13 @@ class ShardCommandLoader(
                                 }
                             }
                         }
-                        method.invoke(command.cmd, *args)
+                        shard.loader.withClassLoaderContext {
+                            method.invoke(command.cmd, *args)
+                        } ?: method.invoke(command.cmd, *args)
                     } else {
-                        command.cmd.execute(executor as Player)
+                        shard.loader.withClassLoaderContext {
+                            command.cmd.execute(executor as Player)
+                        }
                     }
                 }, *(literalArgs.toTypedArray()), *(opts.arguments?.toTypedArray() ?: emptyArray()))            }
         }

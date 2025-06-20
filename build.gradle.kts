@@ -7,16 +7,22 @@ plugins {
 }
 
 group = "host.minestudio"
-version = System.getenv("VERSION") ?: "1.0-SNAPSHOT"
+version = System.getenv("VERSION") ?: "dev"
 
 
 repositories {
+    mavenLocal()
     mavenCentral()
+
+    maven("https://repo.hypera.dev/snapshots/") // spark-minestom
+    maven("https://repo.lucko.me/") // spark-common
+    maven("https://oss.sonatype.org/content/repositories/snapshots/") // spark-common's dependencies
 }
 
 dependencies {
     testImplementation(kotlin("test"))
 
+    implementation("dev.lu15:spark-minestom:1.10-SNAPSHOT")
     implementation(libs.slf4j.api)
     implementation(libs.logback.classic)
     implementation(libs.logback.core)

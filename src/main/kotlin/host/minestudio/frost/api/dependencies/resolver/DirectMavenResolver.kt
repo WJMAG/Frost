@@ -54,7 +54,13 @@ class DirectMavenResolver : ClassPathLibrary, MavenResolver {
 
         this.repositories.put(
             RemoteRepository.Builder(
-                "central", "default", "https://repo1.maven.org/maven2"
+                "central", "default", "https://repo.minestudio.host/repository/maven-central/"
+            ).build(),
+            null
+        )
+        this.repositories.put(
+            RemoteRepository.Builder(
+                "jitpack", "default", "https://repo.minestudio.host/repository/jitpack-proxy/"
             ).build(),
             null
         )
@@ -129,11 +135,11 @@ class DirectMavenResolver : ClassPathLibrary, MavenResolver {
         this.repositories.put(remoteRepository.toRemoteRepository(), owningClass)
     }
 
-    fun getDependencies(): Map<Dependency?, Class<*>?> {
+    override fun getDependencies(): Map<Dependency?, Class<*>?> {
         return this.dependencies
     }
 
-    fun getRepositories(): Map<RemoteRepository?, Class<*>?> {
+    override fun getRepositories(): Map<RemoteRepository?, Class<*>?> {
         return this.repositories
     }
 

@@ -1,6 +1,7 @@
 package host.minestudio.frost.api.shards
 
 import host.minestudio.frost.api.config.ConfigSchema
+import host.minestudio.frost.api.shards.command.ShardCommand
 import host.minestudio.frost.api.shards.enum.LogLevel
 import host.minestudio.frost.api.shards.helper.LogEmitter
 import host.minestudio.frost.api.shards.helper.ShardHelper
@@ -53,14 +54,78 @@ abstract class Shard {
 
     /**
      * Whether this shard
-     * has been through the setup
-     * process.
+     * has been assigned a
+     *
+     *
+     * This is set AFTER the shard
+     * is assigned context.
      *
      * You do not need to set this
      * manually.
      */
     @ApiStatus.Internal
+    var hasContext = false
+
+    /**
+     * Whether this shard
+     * has been through the
+     * pre-setup process.
+     *
+     * This is set AFTER the presetup
+     * method is called.
+     *
+     * You do not need to set this
+     * manually.
+     *
+     * @see [Shard.presetup]
+     */
+    var isPreSetup = false
+
+    /**
+     * Whether this shard
+     * is currently in the setup
+     * process.
+     *
+     * This is set to true when the
+     * [Shard.presetup] method is started,
+     * and set to false when the
+     * [Shard.presetup] method is finished.
+     *
+     * You do not need to set this
+     * manually.
+     */
+    var isInPreSeup = false
+
+    /**
+     * Whether this shard
+     * has been through the setup
+     *
+     *
+     * This is set AFTER the setup
+     * method is called.
+     *
+     * You do not need to set this
+     * manually.
+     *
+     * @see [Shard.create]
+     */
+    @ApiStatus.Internal
     var isSetup = false
+
+    /**
+     * Whether this shard
+     * is currently in the setup
+     * process.
+     *
+     * This is set to true when the
+     * [Shard.create] method is started,
+     * and set to false when the
+     * [Shard.create] method is finished.
+     *
+     * You do not need to set this
+     * manually.
+     */
+    var isInSetup = false
 
     /**
      * This is called prior to the
@@ -120,27 +185,41 @@ abstract class Shard {
      * @param schema The configuration schema to publish
      */
     protected fun publishConfigSchema(schema: ConfigSchema) {
-        if(!isSetup) {
-            throw IllegalStateException("Shard is not setup yet.")
+        if(!isInSetup) {
+            throw IllegalStateException("You can only register Config Schemas during the SETUP phase of a shard.")
         }
         this.shardHelper.registerConfigSchema(schema)
     }
 
     protected fun getStorageService(): StorageService {
-        if (!isSetup) {
-            throw IllegalStateException("Shard is not setup yet.")
+        if (!hasContext) {
+            throw IllegalStateException("This shard does not have contex assigned yet. Please ensure you're calling this after presetup or create, and not during a constructor.")
         }
         return this.shardHelper.getStorageService()
     }
 
     fun getLogEmitter(): LogEmitter {
-        if (!isSetup) {
-            throw IllegalStateException("Shard is not setup yet.")
+        if (!hasContext) {
+            throw IllegalStateException("This shard does not have context assigned yet. Please ensure you're calling this after presetup or create, and not during a constructor.")
         }
         val logger: (LogLevel, String) -> Unit = { level, message ->
             this.shardHelper.emitLog(level, message)
         }
         return LogEmitter(logger)
+    }
+
+    fun registerCommand(command: ShardCommand) {
+        if (!hasContext) {
+            throw IllegalStateException("This shard does not have context assigned yet. Please ensure you're calling this after presetup or create, and not during a constructor.")
+        }
+        this.shardHelper.registerCommand(command)
+    }
+
+    fun setDependencyloader(loader: ShardDependencyLoader) {
+        if (!hasContext) {
+            throw IllegalStateException("This shard does not have context assigned yet. Please ensure you're calling this after presetup or create, and not during a constructor.")
+        }
+        this.shardHelper.shardAppointedDependencyLoader = loader
     }
 
 }

@@ -1,6 +1,8 @@
 package host.minestudio.frost.api.shards.impl
 
 import host.minestudio.frost.api.config.ConfigSchema
+import host.minestudio.frost.api.shards.ShardDependencyLoader
+import host.minestudio.frost.api.shards.command.ShardCommand
 import host.minestudio.frost.api.shards.enum.LogLevel
 import host.minestudio.frost.api.shards.helper.ShardHelper
 import host.minestudio.frost.api.shards.helper.StorageService
@@ -14,6 +16,8 @@ class ShardHelperImpl(
     private val shardName: String
 ) : ShardHelper {
     val logger: Logger = LoggerFactory.getLogger(shardName)
+    override val commands: MutableList<ShardCommand> = mutableListOf()
+    override var shardAppointedDependencyLoader: ShardDependencyLoader? = null
 
     override fun registerConfigSchema(schema: ConfigSchema) {
         if(onlineMode) {
@@ -40,6 +44,10 @@ class ShardHelperImpl(
 
     override fun getStorageService(): StorageService {
         return StorageServiceImpl()
+    }
+
+    override fun registerCommand(command: ShardCommand) {
+        commands.add(command)
     }
 
 }

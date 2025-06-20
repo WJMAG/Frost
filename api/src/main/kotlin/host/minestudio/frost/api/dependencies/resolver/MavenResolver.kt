@@ -27,4 +27,19 @@ interface MavenResolver {
      */
     fun addRepository(owningClass: Class<*>?, repository: RemoteRepository)
 
+    /**
+     * Get all repositories that have been added to the resolver.
+     * This is useful for debugging purposes.
+     *
+     * @return A map of repository names to their URLs
+     */
+    fun getRepositories(): Map<org.eclipse.aether.repository.RemoteRepository?, Class<*>?>
+
+    /**
+     * Get all dependencies that have been added to the resolver.
+     * This is useful for debugging purposes.
+     *
+     * @return A map of dependency names to their versions
+     */
+    fun getDependencies(): Map<Dependency?, Class<*>?>
 }

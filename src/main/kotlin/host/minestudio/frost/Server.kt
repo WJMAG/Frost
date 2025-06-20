@@ -1,13 +1,15 @@
 package host.minestudio.frost
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.LoggerContext
 import host.minestudio.frost.api.shards.ShardManager
 import host.minestudio.frost.impl.ConnSet
 import host.minestudio.frost.impl.SocketIO
 import host.minestudio.frost.impl.SocketListener
 import host.minestudio.frost.util.request
 import io.socket.client.Ack
+import me.lucko.spark.minestom.SparkMinestom
 import net.minestom.server.MinecraftServer
-import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent
 import net.minestom.server.event.player.PlayerSpawnEvent
@@ -15,12 +17,17 @@ import net.minestom.server.extras.MojangAuth
 import net.minestom.server.extras.bungee.BungeeCordProxy
 import net.minestom.server.extras.velocity.VelocityProxy
 import net.minestom.server.instance.InstanceContainer
+import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.anvil.AnvilLoader
 import net.minestom.server.instance.block.Block
 import org.json.JSONObject
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
+import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.system.exitProcess
+
 
 lateinit var SERVER: MinecraftServer
 var socket: SocketIO? = null
@@ -31,12 +38,26 @@ lateinit var spawnWorld: InstanceContainer
 val onlineMode = System.getenv("MINESTUDIO_ENABLED") != "false"
 val API_URL = "${System.getenv("API_HOST")}"
 
+val shardManager = ShardManager()
+
 fun main() {
     if(API_URL.isEmpty() || System.getenv("API_HOST") == null) {
         throw IllegalArgumentException("API_HOST environment variable is not set. Please set it to the MineStudio API URL.")
     }
-    logger = org.slf4j.LoggerFactory.getLogger("MinestudioServer")
+    val isDebug = System.getProperty("frost.debug") == "true"
+    val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
+    if(isDebug) {
+        loggerContext.getLogger(Logger.ROOT_LOGGER_NAME).level = Level.DEBUG
+        loggerContext.getLogger("host.minestudio.frost").level = Level.DEBUG
+    }
+
+    logger = org.slf4j.LoggerFactory.getLogger("host.minestudio.frost.MinestudioServer")
     SERVER = MinecraftServer.init()
+    val directory = Path.of("spark")
+    SparkMinestom.builder(directory)
+        .commands(true) // enables registration of Spark commands
+        .permissionHandler { sender, permission -> true } // allows all command senders to execute all commands
+        .enable()
 
     logger.info("MINESTUDIO_ENABLED is set to $onlineMode: ${System.getenv("MINESTUDIO_ENABLED")}")
 
@@ -98,19 +119,19 @@ fun main() {
             val ack = args.lastOrNull() as? Ack
 
         }
-
-        if(System.getenv("BUNGEE") !== null) {
-            logger.info("BungeeCord Proxy is enabled. Connecting to BungeeCord.")
-            BungeeCordProxy.enable()
-        } else if(System.getenv("VELOCITY") !== null) {
-            logger.info("Velocity Proxy is enabled. Connecting to Velocity.")
-            VelocityProxy.enable(System.getenv("VELOCITY"))
-        } else {
-            logger.info("No proxy is enabled. Using MojangAuth for authentication.")
-            MojangAuth.init()
-        }
     } else {
         logger.info("Online Mode is disabled. Not authenticating with MineStudio API.")
+    }
+
+    if(System.getenv("BUNGEE") !== null) {
+        logger.info("BungeeCord Proxy is enabled. Connecting to BungeeCord.")
+        BungeeCordProxy.enable()
+    } else if(System.getenv("VELOCITY") !== null) {
+        logger.info("Velocity Proxy is enabled. Connecting to Velocity.")
+        VelocityProxy.enable(System.getenv("VELOCITY"))
+    } else {
+        logger.info("No proxy is enabled. Using MojangAuth for authentication.")
+        MojangAuth.init()
     }
 
     logger.info("Setting up the Demo World...")
@@ -120,11 +141,11 @@ fun main() {
     events()
 
     logger.info("Setting up ShardManager...")
-    ShardManager().setup(File(System.getProperty("user.dir")))
+    shardManager.setup(File(System.getProperty("user.dir")))
 
-    MinecraftServer.setBrandName("§bFrost §7(§aMineStudio§7)§f")
+    MinecraftServer.setBrandName("§bFrost §7(§aMineStudio§7)§7")
 
-    SERVER.start("0.0.0.0", 25565)
+    SERVER.start("0.0.0.0", System.getenv("PORT")?.toIntOrNull() ?: 25565)
     println("Server started on port 25565")
 }
 
@@ -133,9 +154,11 @@ private fun demoWorld() {
     val worldDir = Path("world").toFile()
     if(!worldDir.exists()) {
         spawnWorld.setBlock(0, 64, 0, Block.GRASS_BLOCK)
+        spawnWorld.setChunkSupplier(::LightingChunk)
     } else {
         val loader = AnvilLoader(worldDir.toPath())
         spawnWorld.chunkLoader = loader
+        spawnWorld.setChunkSupplier(::LightingChunk)
     }
 }
 

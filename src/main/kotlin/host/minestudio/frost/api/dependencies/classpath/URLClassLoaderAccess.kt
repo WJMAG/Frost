@@ -152,12 +152,12 @@ abstract class URLClassLoaderAccess protected constructor(private val classLoade
          * @return the access object
          */
         fun create(classLoader: URLClassLoader?): URLClassLoaderAccess {
-            if (Reflection.Companion.isSupported) {
-                return Reflection(classLoader)
+            return if (Reflection.Companion.isSupported) {
+                Reflection(classLoader)
             } else if (Unsafe.Companion.isSupported) {
-                return Unsafe(classLoader)
+                Unsafe(classLoader)
             } else {
-                return Noop.Companion.INSTANCE
+                Noop.Companion.INSTANCE
             }
         }
 
