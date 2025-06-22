@@ -12,7 +12,7 @@ version = System.getenv("VERSION") ?: "dev"
 
 repositories {
     mavenLocal()
-    mavenCentral()
+    maven("https://repo.minestudio.host/repository/maven-central/")
 
     maven("https://repo.hypera.dev/snapshots/") // spark-minestom
     maven("https://repo.lucko.me/") // spark-common
