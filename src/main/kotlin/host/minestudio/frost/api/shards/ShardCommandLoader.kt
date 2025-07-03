@@ -193,13 +193,13 @@ class ShardCommandLoader(
                                 }
                             }
                         }
-                        shard.loader.withClassLoaderContext {
-                            method.invoke(command.cmd, *args)
-                        } ?: method.invoke(command.cmd, *args)
+                        val middleware = command.cmd.middleware(executor as Player,literalArgs.joinToString(" "), args)
+                        if (!middleware) return@addSyntax
+                        method.invoke(command.cmd, *args)
                     } else {
-                        shard.loader.withClassLoaderContext {
-                            command.cmd.execute(executor as Player)
-                        }
+                        val middleware = command.cmd.middleware(executor as Player, literalArgs.joinToString(" "), null)
+                        if (!middleware) return@addSyntax
+                        command.cmd.execute(executor)
                     }
                 }, *(literalArgs.toTypedArray()), *(opts.arguments?.toTypedArray() ?: emptyArray()))            }
         }

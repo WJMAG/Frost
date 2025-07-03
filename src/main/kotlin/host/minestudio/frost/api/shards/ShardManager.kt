@@ -237,10 +237,12 @@ class ShardManager {
         Thread.currentThread().contextClassLoader = this::class.java.classLoader
 
         // Pre-setup phase
+        logger.info("┌─ PRE-SETUP ───────────────────────────────")
         shard.isInPreSeup = true
         shard.presetup()
         shard.isInPreSeup = false
         shard.isPreSetup = true
+        logger.info("└──────────────────────────────────────────")
     }
 
     private fun loadDependenciesForShard(shard: Shard): Pair<ShardClassLoader, Pair<SimpleLibraryStore, DirectMavenResolver>>? {
@@ -288,10 +290,12 @@ class ShardManager {
 
     private fun initializeShard(shard: Shard) {
         // Main setup phase
+        logger.info("┌─ SETUP ───────────────────────────────────")
         shard.isInSetup = true
         shard.create()
         shard.isInSetup = false
         shard.isSetup = true
+        logger.info("└──────────────────────────────────────────")
 
         // Register commands
         registerShardCommands(shard)

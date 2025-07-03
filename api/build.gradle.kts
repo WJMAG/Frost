@@ -12,9 +12,10 @@ plugins {
 }
 
 group = "host.minestudio"
-version = System.getenv("VERSION") ?: "1.0-SNAPSHOT"
+version = System.getenv("VERSION") ?: "dev"
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -41,7 +42,7 @@ mavenPublishing {
         sourcesJar = true
     ))
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
-    coordinates("host.minestudio", "frost-snapshots", project.version.toString())
+    coordinates("host.minestudio.ghosts", "frost-snapshots", project.version.toString())
 
     signAllPublications()
 
@@ -79,6 +80,7 @@ mavenPublishing {
 }
 
 signing {
+    isRequired = System.getenv("CI") != null
     val privateKey = System.getenv("GPG_PRIVATE_KEY")
     val keyPassphrase = System.getenv("GPG_PRIVATE_KEY_PASSPHRASE")
     if (privateKey != null && keyPassphrase != null) {
