@@ -6,7 +6,7 @@ import host.minestudio.frost.api.shards.command.ShardCommand
 import host.minestudio.frost.api.shards.enum.LogLevel
 import host.minestudio.frost.api.shards.helper.ShardHelper
 import host.minestudio.frost.api.shards.helper.StorageService
-import host.minestudio.frost.onlineMode
+//import host.minestudio.frost.onlineMode
 import host.minestudio.frost.socket
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -20,7 +20,7 @@ class ShardHelperImpl(
     override var shardAppointedDependencyLoader: ShardDependencyLoader? = null
 
     override fun registerConfigSchema(schema: ConfigSchema) {
-        if(onlineMode) {
+        if(false) { /* onlineMode */
             socket!!.emit("config:register", shardId, shardName, schema.toJson())
             println("Registered config schema for shard: $shardName: " + schema.toJson())
         } else {
@@ -29,7 +29,7 @@ class ShardHelperImpl(
     }
 
     override fun emitLog(level: LogLevel, message: String) {
-        if(onlineMode)
+        if(false)
             socket!!.emit("log", shardName, level.name, message)
         else
             when (level) {

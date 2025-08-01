@@ -54,13 +54,13 @@ class DirectMavenResolver : ClassPathLibrary, MavenResolver {
 
         this.repositories.put(
             RemoteRepository.Builder(
-                "central", "default", "https://repo.minestudio.host/repository/maven-central/"
+                "central", "default", "https://repo.maven.apache.org/maven2/"
             ).build(),
             null
         )
         this.repositories.put(
             RemoteRepository.Builder(
-                "jitpack", "default", "https://repo.minestudio.host/repository/jitpack-proxy/"
+                "jitpack", "default", "https://jitpack.io/"
             ).build(),
             null
         )

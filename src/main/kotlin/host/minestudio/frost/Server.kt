@@ -35,15 +35,9 @@ lateinit var logger: org.slf4j.Logger
 
 lateinit var spawnWorld: InstanceContainer
 
-val onlineMode = System.getenv("MINESTUDIO_ENABLED") != "false"
-val API_URL = "${System.getenv("API_HOST")}"
-
 val shardManager = ShardManager()
 
 fun main() {
-    if(API_URL.isEmpty() || System.getenv("API_HOST") == null) {
-        throw IllegalArgumentException("API_HOST environment variable is not set. Please set it to the MineStudio API URL.")
-    }
     val isDebug = System.getProperty("frost.debug") == "true"
     val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
     if(isDebug) {
@@ -51,7 +45,7 @@ fun main() {
         loggerContext.getLogger("host.minestudio.frost").level = Level.DEBUG
     }
 
-    logger = org.slf4j.LoggerFactory.getLogger("host.minestudio.frost.MinestudioServer")
+    logger = LoggerFactory.getLogger("host.minestudio.frost.MinestudioServer")
     SERVER = MinecraftServer.init()
     val directory = Path.of("spark")
     SparkMinestom.builder(directory)
@@ -59,11 +53,9 @@ fun main() {
         .permissionHandler { sender, permission -> true } // allows all command senders to execute all commands
         .enable()
 
-    logger.info("MINESTUDIO_ENABLED is set to $onlineMode: ${System.getenv("MINESTUDIO_ENABLED")}")
-
-    if(onlineMode) {
+    if(false) {
         logger.info("Online Mode is enabled. Connecting to the MineStudio API.")
-        val apiHost = API_URL.replace("http://", "").replace("https://", "")
+        val apiHost = "".replace("http://", "").replace("https://", "")
         socket = SocketIO.connect(
             ConnSet(
                 apiHost.split(":")[0],
@@ -78,7 +70,7 @@ fun main() {
                     }
                 }
             ),
-            API_URL.startsWith("https://")
+            "".startsWith("https://")
         )!!
         socket!!.register(object: SocketListener {
             override fun listen(objects: Array<Any?>?, callback: Ack?) {
@@ -88,7 +80,7 @@ fun main() {
                     val sessionId = json.getJSONObject("payload").getString("session_id")
                     if(sessionId === null) throw IllegalArgumentException("Session ID cannot be null")
                     val req = request(
-                        "$API_URL/api/v1/registration/sidecar",
+                        "/api/v1/registration/sidecar",
                         "POST",
                         body = JSONObject().apply {
                             put("ws_id", sessionId)
@@ -120,7 +112,7 @@ fun main() {
 
         }
     } else {
-        logger.info("Online Mode is disabled. Not authenticating with MineStudio API.")
+        logger.info("Online Mode is disabled. Not authenticating with MineStudio API. (Forcefully disabled)")
     }
 
     if(System.getenv("BUNGEE") !== null) {
@@ -129,6 +121,8 @@ fun main() {
     } else if(System.getenv("VELOCITY") !== null) {
         logger.info("Velocity Proxy is enabled. Connecting to Velocity.")
         VelocityProxy.enable(System.getenv("VELOCITY"))
+    } else if(System.getenv("OFFLINE") !== null) {
+        logger.warn("Running in offline mode. This is not recommended for any servers, let alone production servers.")
     } else {
         logger.info("No proxy is enabled. Using MojangAuth for authentication.")
         MojangAuth.init()
@@ -143,10 +137,18 @@ fun main() {
     logger.info("Setting up ShardManager...")
     shardManager.setup(File(System.getProperty("user.dir")))
 
-    MinecraftServer.setBrandName("§bFrost §7(§aMineStudio§7)§7")
+    MinecraftServer.setBrandName("§bFrost §7(§aMineStudio§7)§f")
 
     SERVER.start("0.0.0.0", System.getenv("PORT")?.toIntOrNull() ?: 25565)
-    println("Server started on port 25565")
+    println("Server started on port ${System.getenv("POST")?.toIntOrNull() ?: 25565}")
+
+    println("")
+    println("    __________  ____  ___________")
+    println("   / ____/ __ \\/ __ \\/ ___/_  __/")
+    println("  / /_  / /_/ / / / /\\__ \\ / /   ")
+    println(" / __/ / _, _/ /_/ /___/ // /    ")
+    println("/_/   /_/ |_|\\____//____//_/     ")
+    println("     -- By MineStudio --  ")
 }
 
 private fun demoWorld() {
@@ -170,16 +172,16 @@ private fun events() {
         val x = json.getDouble("x")
         val y = json.getDouble("y")
         val z = json.getDouble("z")
-        val yaw = json.getDouble("yaw")
-        val pitch = json.getDouble("pitch")
-        spawnPoint = Pos(x, y, z, yaw.toFloat(), pitch.toFloat())
+        val yaw = json.getDouble("yaw").toFloat()
+        val pitch = json.getDouble("pitch").toFloat()
+        spawnPoint = Pos(x, y, z, yaw, pitch)
     }
     MinecraftServer.getGlobalEventHandler().addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
         val player = event.player
         event.spawningInstance = spawnWorld
         event.player.respawnPoint = spawnPoint
     }
-    MinecraftServer.getGlobalEventHandler().addListener(PlayerSpawnEvent::class.java) { event ->
+    spawnWorld.eventNode().addListener(PlayerSpawnEvent::class.java) { event ->
         val player = event.player
         player.teleport(spawnPoint)
     }

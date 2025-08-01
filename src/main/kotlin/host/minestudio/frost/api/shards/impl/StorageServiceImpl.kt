@@ -3,7 +3,7 @@ package host.minestudio.frost.api.shards.impl
 import host.minestudio.frost.api.shards.helper.StorageService
 import host.minestudio.frost.impl.SocketIO
 import host.minestudio.frost.logger
-import host.minestudio.frost.onlineMode
+//import host.minestudio.frost.onlineMode
 import host.minestudio.frost.socket
 import org.json.JSONObject
 import org.yaml.snakeyaml.Yaml
@@ -25,7 +25,7 @@ class StorageServiceImpl : StorageService {
             }
         })
 
-        if(!onlineMode) {
+        if(!false /*onlineMode*/) {
             // Load local cache from files
             val storeDir = java.io.File("store")
             if (storeDir.exists() && storeDir.isDirectory) {
@@ -41,7 +41,7 @@ class StorageServiceImpl : StorageService {
     }
 
     override fun deleteData(storeName: String, key: String) {
-        if(onlineMode)
+        if(false /*onlineMode*/)
             socket!!.emit("data_service:delete", storeName, key)
         else
             localCache[storeName]?.remove(key)
@@ -49,7 +49,7 @@ class StorageServiceImpl : StorageService {
 
     override fun getData(storeName: String, key: String): CompletableFuture<Any?> {
         val future = CompletableFuture<Any?>()
-        if (onlineMode) {
+        if (false /*onlineMode*/) {
             Thread.ofVirtual().run {
                 val obj = object : SocketIO.SocketCallback {
                     override fun call(response: JSONObject?) {
@@ -65,7 +65,7 @@ class StorageServiceImpl : StorageService {
     }
 
     override fun getDataSync(storeName: String, key: String): Any? {
-        return if (onlineMode) {
+        return if (false /*onlineMode*/) {
             getData(storeName, key).get()
         } else {
             localCache[storeName]?.get(key)
@@ -73,7 +73,7 @@ class StorageServiceImpl : StorageService {
     }
 
     override fun saveData(storeName: String, key: String, value: Any) {
-        if(onlineMode) {
+        if(false /*onlineMode*/) {
             socket!!.emit("data_service:set", storeName, key, value)
         } else {
             localCache.computeIfAbsent(storeName) { mutableMapOf() }[key] = value
