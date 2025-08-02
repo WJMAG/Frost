@@ -20,7 +20,7 @@ maven-publish = "0.34.0"
 slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
 logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
 logback-core = { group = "ch.qos.logback", name = "logback-core", version.ref = "logback" }
-minestom = { group = "net.minestom", name = "minestom-snapshots", version.ref = "minestom" }
+minestom = { group = "net.minestom", name = "minestom", version.ref = "minestom" }
 eclipse-collections = { group = "org.eclipse.collections", name = "eclipse-collections", version.ref = "eclipse-collections" }
 socket-io = { group = "io.socket", name = "socket.io-client", version.ref = "socket-io" }
 auto-service = { group = "com.google.auto.service", name = "auto-service", version.ref = "auto-service" }
