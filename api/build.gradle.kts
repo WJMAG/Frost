@@ -42,7 +42,7 @@ mavenPublishing {
         sourcesJar = true
     ))
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
-    coordinates("host.minestudio.ghosts", "frost-snapshots", project.version.toString())
+    coordinates("host.minestudio", "frost-snapshots", project.version.toString())
 
     signAllPublications()
 
