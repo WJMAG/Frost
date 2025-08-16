@@ -45,8 +45,8 @@ publishing {
             name = "GitHubPackages"
             url = URI("https://maven.pkg.github.com/wjmag/frost")
             credentials {
-                username = System.getenv("GITHUB_ACTOR") ?: "wjmag"
-                password = System.getenv("GITHUB_TOKEN") ?: "null"
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
             }
         }
     }
