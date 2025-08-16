@@ -2,15 +2,13 @@ package host.minestudio.frost.api.shards
 
 import org.jetbrains.annotations.ApiStatus
 import org.slf4j.LoggerFactory
-import java.io.File
 import java.net.URL
 import java.net.URLClassLoader
 
 @ApiStatus.Internal
 class ShardClassLoader(
     urls: Array<URL?>,
-    parentClassLoader: ClassLoader,
-    private val dataDir: File?
+    parentClassLoader: ClassLoader
 ) : URLClassLoader(urls.filterNotNull().toTypedArray(), parentClassLoader) {
 
     private val logger = LoggerFactory.getLogger(ShardClassLoader::class.java)
@@ -33,7 +31,7 @@ class ShardClassLoader(
                 }
                 classCache[name] = loadedClass
                 return loadedClass
-            } catch (e: ClassNotFoundException) {
+            } catch (_: ClassNotFoundException) {
                 // Not found in this classloader, continue
             }
 
@@ -59,19 +57,6 @@ class ShardClassLoader(
         } catch (e: ClassNotFoundException) {
             logger.trace("Class not found in shard: $name")
             throw e
-        }
-    }
-
-    /**
-     * Helper method to ensure proper classloader context for operations
-     */
-    fun <T> withClassLoaderContext(block: () -> T): T {
-        val originalClassLoader = Thread.currentThread().contextClassLoader
-        try {
-            Thread.currentThread().contextClassLoader = this
-            return block()
-        } finally {
-            Thread.currentThread().contextClassLoader = originalClassLoader
         }
     }
 

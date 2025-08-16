@@ -3,7 +3,6 @@ package host.minestudio.frost
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
 import host.minestudio.frost.api.shards.ShardManager
-import host.minestudio.frost.impl.SocketIO
 import me.lucko.spark.minestom.SparkMinestom
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
@@ -26,7 +25,6 @@ import kotlin.io.path.Path
 
 
 lateinit var SERVER: MinecraftServer
-var socket: SocketIO? = null
 lateinit var logger: Logger
 
 lateinit var spawnWorld: InstanceContainer

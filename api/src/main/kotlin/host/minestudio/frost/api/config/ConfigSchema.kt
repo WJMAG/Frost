@@ -1,7 +1,6 @@
 package host.minestudio.frost.api.config
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -13,6 +12,7 @@ data class ConfigSchema(
     val description: String? = null,
     val sections: List<ConfigSection>
 ) {
+    @Suppress("unused")
     fun toJson(): String {
         val json = Json {
             prettyPrint = true

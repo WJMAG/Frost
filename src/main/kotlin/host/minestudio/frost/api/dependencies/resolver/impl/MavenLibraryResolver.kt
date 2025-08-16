@@ -59,7 +59,7 @@ class MavenLibraryResolver : ClassPathLibrary {
     }
 
     @Throws(LibraryLoadingException::class)
-    override fun register(store: LibraryStore) {
+    override fun register(var1: LibraryStore) {
         val repos: MutableList<RemoteRepository> =
             this.repository.newResolutionRepositories(this.session, this.repositories)
 
@@ -81,8 +81,8 @@ class MavenLibraryResolver : ClassPathLibrary {
 
         while (var8.hasNext()) {
             val artifact: ArtifactResult = var8.next() as ArtifactResult
-            val file: File = artifact.artifact.getFile()
-            store.addLibrary(file.toPath())
+            val file: File = artifact.artifact.file
+            var1.addLibrary(file.toPath())
         }
     }
 

@@ -13,6 +13,7 @@ import host.minestudio.frost.api.config.SwitchConfig
 
 class ShardConfig {
 
+    @Suppress("unused")
     lateinit var config: ConfigSchema
 
     fun genConfig(): ConfigSchema {

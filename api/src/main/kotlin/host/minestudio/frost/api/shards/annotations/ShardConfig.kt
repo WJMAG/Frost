@@ -1,5 +1,6 @@
 package host.minestudio.frost.api.shards.annotations
 
+@Suppress("unused")
 annotation class ShardConfig(
     val id: String,
     val name: String,

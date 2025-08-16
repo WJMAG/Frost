@@ -72,7 +72,7 @@ class ShardManager {
             }
 
             try {
-                val loader = ShardClassLoader(arrayOf(file.toURI().toURL()), ShardManager::class.java.classLoader, dataDir.toFile())
+                val loader = ShardClassLoader(arrayOf(file.toURI().toURL()), ShardManager::class.java.classLoader)
                 val shard = ServiceLoader.load(Shard::class.java, loader).firstOrNull()
                 if (shard != null) {
                     shardsAndLoaders.add(Pair(shard, loader))
@@ -228,7 +228,7 @@ class ShardManager {
             ShardInfo(it.name, it.id, it.version, "unused", it.deps.toList())
         } ?: throw IllegalStateException("ShardConfig annotation missing on ${shard.javaClass.name}")
 
-        shard.init(shardLoader, ShardHelperImpl(shardInfo.id, shardInfo.name), shardInfo, spawnWorld, dataDir.toFile())
+        shard.init(shardLoader, ShardHelperImpl(shardInfo.id), shardInfo, spawnWorld, dataDir.toFile())
 
         Thread.currentThread().contextClassLoader = this::class.java.classLoader
 

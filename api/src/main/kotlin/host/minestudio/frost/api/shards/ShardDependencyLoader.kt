@@ -5,7 +5,6 @@ import host.minestudio.frost.api.dependencies.resolver.MavenResolver
 /**
  * Represents a module dependency loader.
  */
-@Suppress("unused")
 abstract class ShardDependencyLoader {
 
     /**

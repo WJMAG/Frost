@@ -49,7 +49,7 @@ object SocketIO {
     var io: Socket? = null
     private val pendingRegistration: MutableList<SocketListener> = ArrayList<SocketListener>()
 
-    private val registry: Registry<String, Emitter.Listener> = EclipseStore<String, Emitter.Listener>()
+    private val registry: Registry<String, Emitter.Listener> = EclipseStore()
     private var isApiRebooting = false
     private var connectionAttempts = 0
     private const val RECONNECT_JITTER_MAX_MS = 5000
@@ -80,7 +80,7 @@ object SocketIO {
                 "http://${connSet.ip}:${connSet.port}/server"
             }, opts)
             io!!.connect()
-            Thread.ofVirtual().name("SocketIO").start(Runnable {
+            Thread.ofVirtual().name("SocketIO").start {
                 for (listener in pendingRegistration) {
                     registry.register(listener.channel!!, Emitter.Listener { obj: Array<Any?>? ->
                         if (Arrays.stream<Any?>(obj).toList().last() is Ack) {
@@ -90,7 +90,7 @@ object SocketIO {
                         }
                     })
                 }
-            })
+            }
             io!!.onAnyIncoming { args ->
                 val event = args[0] as String
                 println("[-----] Received event: $event")
@@ -140,7 +140,6 @@ object SocketIO {
      * @param args    The arguments to emit.
      *
      */
-    @Suppress("unused")
     fun emit(channel: String, vararg args: Any?) {
         if (io != null) {
             io!!.emit(channel, *args)
@@ -157,7 +156,6 @@ object SocketIO {
      * @param callback The callback to call.
      *
      */
-    @Suppress("unused")
     fun emit(channel: String, callback: SocketCallback, vararg args: Any?) {
         if (io != null) {
             io!!.emit(channel, args, SocketAcknowledgement(callback))

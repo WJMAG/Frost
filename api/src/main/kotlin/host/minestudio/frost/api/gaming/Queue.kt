@@ -1,6 +1,5 @@
-package net.minestom.jam
+package host.minestudio.frost.api.gaming
 
-import host.minestudio.frost.api.gaming.Game
 import it.unimi.dsi.fastutil.Pair
 import it.unimi.dsi.fastutil.objects.Object2LongMap
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap
@@ -37,6 +36,7 @@ import java.util.function.Supplier
 /**
  * @author https://github.com/Minestom/game-jam-template/blob/main/src/main/java/net/minestom/jam/Queue.java
  */
+@Suppress("unused")
 @JvmRecord
 data class Queue(val players: MutableSet<UUID>, val isPrivate: Boolean) : PacketGroupingAudience {
     /**
@@ -212,7 +212,7 @@ data class Queue(val players: MutableSet<UUID>, val isPrivate: Boolean) : Packet
             }
 
             // Return an empty queue
-            val queue = Queue(CopyOnWriteArraySet<UUID>(), false)
+            val queue = Queue(CopyOnWriteArraySet(), false)
             publicQueues.add(queue)
             return queue
         }
@@ -221,7 +221,7 @@ data class Queue(val players: MutableSet<UUID>, val isPrivate: Boolean) : Packet
          * Always creates a new private queue specifically for the player.
          */
         private fun createPrivateQueue(): Queue {
-            val queue = Queue(CopyOnWriteArraySet<UUID>(), true)
+            val queue = Queue(CopyOnWriteArraySet(), true)
             privateQueues.add(queue)
             return queue
         }

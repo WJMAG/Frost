@@ -25,6 +25,7 @@ class ExampleCommand : ShardCommand() {
         description = "An example subcommand with an argument",
         usage = "/example argument <name>",
     )
+    @Suppress("unused")
     fun argument(
         executor: Player,
         @Argument(ArgumentEntityType::class) name: EntityType,

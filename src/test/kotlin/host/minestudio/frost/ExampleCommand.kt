@@ -14,6 +14,7 @@ import net.minestom.server.entity.Player
     description = "An example command",
     aliases = ["ex"]
 )
+@Suppress("unused")
 class ExampleCommand : ShardCommand() {
 
     override fun execute(executor: Player) {

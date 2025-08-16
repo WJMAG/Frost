@@ -2,6 +2,7 @@ package host.minestudio.frost.api.shards.helper
 
 import host.minestudio.frost.api.shards.enum.LogLevel
 
+@Suppress("unused")
 class LogEmitter(private val logger: ((level: LogLevel, message: String) -> Unit)) {
 
     /**

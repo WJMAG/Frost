@@ -65,7 +65,7 @@ class Game(players: MutableSet<UUID>, private val lobbyInstance: Instance, priva
     }
 
     override fun getPlayers(): @UnmodifiableView MutableCollection<Player> {
-        return Collections.unmodifiableCollection<Player>(players)
+        return Collections.unmodifiableCollection(players)
     }
 
     companion object {

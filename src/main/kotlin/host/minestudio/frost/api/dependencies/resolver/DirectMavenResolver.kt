@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory
  *
  * @author someone on stackoverflow
  */
-@Suppress("unused", "deprecation")
+@Suppress("unused")
 class DirectMavenResolver : ClassPathLibrary, MavenResolver {
     private val repository: RepositorySystem
     private val session: DefaultRepositorySystemSession

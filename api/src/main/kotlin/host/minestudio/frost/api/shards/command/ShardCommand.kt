@@ -21,6 +21,7 @@ abstract class ShardCommand {
      * This is used for logging messages to
      * the console.
      */
+    @Suppress("unused")
     fun getLogger(): LogEmitter = shard.getLogEmitter()
 
     /**

@@ -8,6 +8,7 @@ import java.util.function.BiConsumer
  * @param K Key
  * @param V Value
  */
+@Suppress("unused")
 interface Registry<K, V> : Iterable<V> {
 
     /**

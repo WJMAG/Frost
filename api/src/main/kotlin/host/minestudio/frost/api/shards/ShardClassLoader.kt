@@ -13,6 +13,7 @@ interface ShardClassLoader {
      * [java.net.URLClassLoader], which is used to
      * load classes from the shard.
      */
+    @Suppress("unused")
     fun loadClass(name: String, resolve: Boolean): Class<*>?
 
 }

@@ -60,7 +60,7 @@ abstract class URLClassLoaderAccess protected constructor(private val classLoade
                 try {
                     addUrlMethod = URLClassLoader::class.java.getDeclaredMethod("addURL", URL::class.java)
                     addUrlMethod.setAccessible(true)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     addUrlMethod = null
                 }
                 ADD_URL_METHOD = addUrlMethod
@@ -87,7 +87,7 @@ abstract class URLClassLoaderAccess protected constructor(private val classLoade
                 val ucp = fetchField(URLClassLoader::class.java, classLoader, "ucp")
                 unopenedURLs = fetchField(ucp.javaClass, ucp, "unopenedUrls") as MutableCollection<URL?>?
                 pathURLs = fetchField(ucp.javaClass, ucp, "path") as MutableCollection<URL?>?
-            } catch (e: Throwable) {
+            } catch (_: Throwable) {
                 unopenedURLs = null
                 pathURLs = null
             }
@@ -116,7 +116,7 @@ abstract class URLClassLoaderAccess protected constructor(private val classLoade
                     val unsafeField = sun.misc.Unsafe::class.java.getDeclaredField("theUnsafe")
                     unsafeField.setAccessible(true)
                     unsafe = unsafeField.get(null) as sun.misc.Unsafe?
-                } catch (t: Throwable) {
+                } catch (_: Throwable) {
                     unsafe = null
                 }
                 UNSAFE = unsafe
@@ -151,6 +151,7 @@ abstract class URLClassLoaderAccess protected constructor(private val classLoade
          * @param classLoader the class loader
          * @return the access object
          */
+        @Suppress("unused")
         fun create(classLoader: URLClassLoader?): URLClassLoaderAccess {
             return if (Reflection.Companion.isSupported) {
                 Reflection(classLoader)

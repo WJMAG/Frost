@@ -15,6 +15,7 @@ import host.minestudio.shard.example.command.ExampleCommand
     // authors = ["MineStudio"],
     // deps = ["example-dep"]
 )
+@Suppress("unused")
 class ShardMain : Shard() {
 
     override fun presetup() {
