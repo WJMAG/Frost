@@ -1,12 +1,9 @@
-import com.vanniktech.maven.publish.JavadocJar
-import com.vanniktech.maven.publish.KotlinJvm
-import com.vanniktech.maven.publish.SonatypeHost
-
+import java.net.URI
 
 plugins {
     kotlin("jvm")
     id("org.jetbrains.dokka") version "2.0.0"
-    id("com.vanniktech.maven.publish") version "0.32.0"
+    id("maven-publish")
     signing
     kotlin("plugin.serialization") version "2.2.0"
 }
@@ -36,57 +33,17 @@ dependencies {
     api(libs.auto.service) // AUTO SERVICE
 }
 
-mavenPublishing {
-    configure(KotlinJvm(
-        javadocJar = JavadocJar.Dokka("dokkaHtml"),
-        sourcesJar = true
-    ))
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
-    coordinates("host.minestudio", "frost-snapshots", project.version.toString())
 
-    signAllPublications()
-
-    pom {
-        name.set("Frost API")
-        description.set("A library for creating and managing Minestom servers.")
-        inceptionYear.set("2025")
-        url.set("https://www.minestudio.host")
-
-        developers {
-            developer {
-                id.set("cammyzed")
-                name.set("Cam M")
-                url.set("https://expx.dev")
-                email.set("cam@expx.dev")
-            }
-            developer {
-                id.set("thecodingduck")
-                name.set("Colton H")
-                email.set("zcoltonhirsch@gmail.com")
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = URI("https://maven.pkg.github.com/wjmag/frost")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") ?: "wjmag"
+                password = System.getenv("GITHUB_TOKEN") ?: "null"
             }
         }
-        licenses {
-            license {
-                name.set("No License")
-                url.set("https://www.minestudio.host/")
-            }
-        }
-        scm {
-            url.set("scm:git:github.com/MineStudio-Host/Frost.git")
-            developerConnection.set("scm:git:ssh://github.com/MineStudio-Host/Frost.git")
-            connection.set("scm:git:github.com/MineStudio-Host/Frost.git")
-        }
-    }
-}
-
-signing {
-    isRequired = System.getenv("CI") != null
-    val privateKey = System.getenv("GPG_PRIVATE_KEY")
-    val keyPassphrase = System.getenv("GPG_PRIVATE_KEY_PASSPHRASE")
-    if (privateKey != null && keyPassphrase != null) {
-        useInMemoryPgpKeys(privateKey, keyPassphrase)
-    } else {
-        logger.warn("GPG keys not found in environment variables. Signing will be skipped.")
     }
 }
 

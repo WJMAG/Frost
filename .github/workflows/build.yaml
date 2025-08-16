@@ -11,8 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  REGISTRY: docker-private.repo.minestudio.host
-  IMAGE_NAME: docker-private.repo.minestudio.host/user/frost
+  IMAGE_NAME: ghcr.io/wjmag/frost
   JAVA_VERSION: '21'
   NODE_VERSION: '22'
 

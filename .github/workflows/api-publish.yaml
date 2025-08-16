@@ -1,4 +1,4 @@
-name: Deploy Frost API to Sonatype
+name: Deploy Frost API to GitHub Packages
 
 on:
   push:
@@ -12,8 +12,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  REGISTRY: docker-private.repo.minestudio.host
-  IMAGE_NAME: docker-private.repo.minestudio.host/user/frost
   JAVA_VERSION: '21'
   NODE_VERSION: '22'
 
@@ -34,13 +32,11 @@ jobs:
       - id: vars
         run: echo "short_commit_hash=${GITHUB_SHA::10}" >> $GITHUB_OUTPUT
       - name: Publish to Central via Build
-        if: github.repository_owner == 'MineStudio-Host'
+        if: github.repository_owner == 'WJMAG'
         run: |
-          ./gradlew publishToMavenCentral --no-configuration-cache
+          ./gradlew publish --no-configuration-cache
           echo "Version: ${VERSION}" >> $GITHUB_STEP_SUMMARY
         env:
           VERSION: ${{ steps.vars.outputs.short_commit_hash }}
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_PASSWORD }}
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PRIVATE_KEY_PASSPHRASE: ${{ secrets.GPG_KEY_PASSPHRASE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
