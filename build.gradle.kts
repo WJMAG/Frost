@@ -59,7 +59,7 @@ tasks {
     shadowJar {
         mergeServiceFiles()
         archiveClassifier.set("")
-        archiveFileName.set("${project.name}-${project.version}.jar")
+        archiveFileName.set("Frost.jar")
         doLast {
             val targetDir = file("$rootDir/.run/").apply { mkdirs() }
 
