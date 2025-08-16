@@ -1,8 +1,7 @@
 [versions]
-kotlin = "2.2.0"  # Using the higher version from your files
 slf4j = "2.0.17"
 logback = "1.5.18"
-minestom = "2025.07.30-1.21.8"
+minestom = "2025.08.12-1.21.8"
 eclipse-collections = "12.0.0.M3"
 socket-io = "2.1.2"
 auto-service = "1.1.1"
@@ -10,10 +9,7 @@ snakeyaml = "2.4"
 maven-resolver = "1.9.24"
 maven-core = "3.9.10"
 kotlinx-serialization = "1.8.1"
-gradle-shadow = "8.3.8"
-nexus-publish = "2.0.0"
-dokka = "2.0.0"
-maven-publish = "0.34.0"
+ktor = "3.2.0"
 
 [libraries]
 # Shared libraries
@@ -25,6 +21,9 @@ eclipse-collections = { group = "org.eclipse.collections", name = "eclipse-colle
 socket-io = { group = "io.socket", name = "socket.io-client", version.ref = "socket-io" }
 auto-service = { group = "com.google.auto.service", name = "auto-service", version.ref = "auto-service" }
 snakeyaml = { group = "org.yaml", name = "snakeyaml", version.ref = "snakeyaml" }
+ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
+ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 
 # Maven resolver libraries (with version differences)
 maven-resolver-provider = { group = "org.apache.maven", name = "maven-resolver-provider", version.ref = "maven-core" }
@@ -36,11 +35,4 @@ maven-resolver-classpath = { group = "org.apache.maven.resolver", name = "maven-
 
 # Kotlin serialization
 kotlinx-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
-
-[plugins]
-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-shadow = { id = "com.gradleup.shadow", version.ref = "gradle-shadow" }
-nexus-publish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexus-publish" }
-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.10.2" }

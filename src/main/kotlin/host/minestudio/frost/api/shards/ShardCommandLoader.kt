@@ -9,10 +9,8 @@ import net.minestom.server.entity.Player
 import org.slf4j.Logger
 import java.lang.reflect.Method
 import java.lang.reflect.Parameter
-import java.util.ServiceLoader
 
 class ShardCommandLoader(
-    private val shardLoader: ShardClassLoader,
     private val shard: Shard,
     private val logger: Logger
 ) {
@@ -21,7 +19,7 @@ class ShardCommandLoader(
         logger.debug("│     Scanning for commands...")
 
         return try {
-            shard.shardHelper.commands
+            shard.getCommands()
                 .onEach { it.shard = shard }
                 .mapNotNull {
                     processCommand(it).also { cmd ->
@@ -36,7 +34,7 @@ class ShardCommandLoader(
 
     private fun processCommand(command: ShardCommand): ShardManager.CommandOpts? {
         return command.javaClass.getAnnotation(Command::class.java)?.let { cmdAnnotation ->
-            val subcommands = logSubcommandProcessing(command) {
+            val subcommands = logSubcommandProcessing {
                 processSubcommands(command)
             }
 
@@ -49,7 +47,7 @@ class ShardCommandLoader(
         }
     }
 
-    private inline fun <T> logSubcommandProcessing(command: ShardCommand, block: () -> T): T {
+    private inline fun <T> logSubcommandProcessing(block: () -> T): T {
         logger.debug("│   Scanning for subcommands...")
         val startTime = System.currentTimeMillis()
         val result = block()
@@ -153,7 +151,6 @@ class ShardCommandLoader(
 
     class MinestomCommand(
         private val command: ShardManager.CommandOpts,
-        private val shard: Shard
     ) : net.minestom.server.command.builder.Command(command.name) {
 
         init {
@@ -172,7 +169,6 @@ class ShardCommandLoader(
                             throw IllegalArgumentException("Parameter count mismatch")
                         }
                         val argsMap = ctx.map
-                        val shift = opts.path.split(" ").size
                         val args = Array<Any?>(methodParams.size) { index ->
                             when (index) {
                                 0 -> executor

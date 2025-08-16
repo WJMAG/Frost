@@ -6,32 +6,35 @@ import host.minestudio.frost.api.shards.enum.LogLevel
 import host.minestudio.frost.api.shards.helper.LogEmitter
 import host.minestudio.frost.api.shards.helper.ShardHelper
 import host.minestudio.frost.api.shards.helper.StorageService
+import net.minestom.server.instance.Instance
 import org.jetbrains.annotations.ApiStatus
 import java.io.File
-import java.lang.reflect.Method
 import java.net.URL
+import java.util.Collections
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * The base class for all shards.
  */
-abstract class Shard {
+abstract class Shard() {
 
-    /**
-     * The classloader for this shard.
-     * Never touch this. It will break
-     * your entire shard if modified.
-     */
-    @ApiStatus.Internal
-    lateinit var loader: ShardClassLoader
+    private lateinit var loader: ShardClassLoader
+    private lateinit var helper: ShardHelper
+    private lateinit var info: ShardInfo
 
-    /**
-     * The shard helper for this shard.
-     * You should never need to touch
-     * this, as it is used by methods
-     * within this class.
-     */
-    @ApiStatus.Internal
-    lateinit var shardHelper: ShardHelper
+    private val isInitialized: AtomicBoolean = AtomicBoolean(false)
+    fun init(loader: ShardClassLoader, helper: ShardHelper, info: ShardInfo, world: Instance, dataFolder: File) {
+        if(!isInitialized.compareAndSet(false, true)) {
+            throw IllegalStateException("Shard has already been initialized.")
+        }
+        this.loader = loader
+        this.helper = helper
+        this.info = info
+        this.defaultWorld = world
+        this.dataFolder = dataFolder
+        this.hasContext = true
+    }
+
 
     /**
      * The data folder for this shard.
@@ -42,15 +45,11 @@ abstract class Shard {
     lateinit var dataFolder: File
 
     /**
-     * The shard info for this shard.
-     * This contains information
-     * about the shard, such as
-     * the name, version, and author.
-     *
-     * Do not modify this during runtime.
+     * This is the base world loaded
+     * by Frost. This is where players
+     * will spawn when they join the server.
      */
-    @ApiStatus.Internal
-    var info: ShardInfo? = null
+    lateinit var defaultWorld: Instance
 
     /**
      * Whether this shard
@@ -188,14 +187,14 @@ abstract class Shard {
         if(!isInSetup) {
             throw IllegalStateException("You can only register Config Schemas during the SETUP phase of a shard.")
         }
-        this.shardHelper.registerConfigSchema(schema)
+        this.helper.registerConfigSchema(schema)
     }
 
     protected fun getStorageService(): StorageService {
         if (!hasContext) {
             throw IllegalStateException("This shard does not have contex assigned yet. Please ensure you're calling this after presetup or create, and not during a constructor.")
         }
-        return this.shardHelper.getStorageService()
+        return this.helper.getStorageService()
     }
 
     fun getLogEmitter(): LogEmitter {
@@ -203,7 +202,7 @@ abstract class Shard {
             throw IllegalStateException("This shard does not have context assigned yet. Please ensure you're calling this after presetup or create, and not during a constructor.")
         }
         val logger: (LogLevel, String) -> Unit = { level, message ->
-            this.shardHelper.emitLog(level, message)
+            this.helper.emitLog(level, message)
         }
         return LogEmitter(logger)
     }
@@ -212,14 +211,33 @@ abstract class Shard {
         if (!hasContext) {
             throw IllegalStateException("This shard does not have context assigned yet. Please ensure you're calling this after presetup or create, and not during a constructor.")
         }
-        this.shardHelper.registerCommand(command)
+        this.helper.registerCommand(command)
     }
 
     fun setDependencyloader(loader: ShardDependencyLoader) {
         if (!hasContext) {
             throw IllegalStateException("This shard does not have context assigned yet. Please ensure you're calling this after presetup or create, and not during a constructor.")
         }
-        this.shardHelper.shardAppointedDependencyLoader = loader
+        this.helper.shardAppointedDependencyLoader = loader
+    }
+
+    fun getCommands(): List<ShardCommand> {
+        if (!hasContext) {
+            throw IllegalStateException("This shard does not have context assigned yet. Please ensure you're calling this after presetup or create, and not during a constructor.")
+        }
+        return Collections.unmodifiableList(this.helper.commands)
+    }
+
+    fun getInfo(): ShardInfo? {
+        return this.info
+    }
+
+    fun getClassLoader(): ShardClassLoader? {
+        return this.loader
+    }
+
+    fun getShardAppointedDependencyLoader(): ShardDependencyLoader? {
+        return this.helper.shardAppointedDependencyLoader
     }
 
 }

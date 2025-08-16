@@ -19,12 +19,14 @@ class ShardHelperImpl(
     override val commands: MutableList<ShardCommand> = mutableListOf()
     override var shardAppointedDependencyLoader: ShardDependencyLoader? = null
 
+    private val storageServiceImpl = StorageServiceImpl()
+
     override fun registerConfigSchema(schema: ConfigSchema) {
         if(false) { /* onlineMode */
             socket!!.emit("config:register", shardId, shardName, schema.toJson())
-            println("Registered config schema for shard: $shardName: " + schema.toJson())
+            logger.info("Registered config schema for shard: $shardName: " + schema.toJson())
         } else {
-            println("WARN: Cannot register config without connection to MineStudio.")
+            logger.warn("WARN: Cannot register config without connection to MineStudio.")
         }
     }
 
@@ -43,7 +45,7 @@ class ShardHelperImpl(
     }
 
     override fun getStorageService(): StorageService {
-        return StorageServiceImpl()
+        return storageServiceImpl
     }
 
     override fun registerCommand(command: ShardCommand) {

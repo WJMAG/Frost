@@ -1,11 +1,11 @@
 package host.minestudio.frost.api.shards
 
-import host.minestudio.frost.api.dependencies.classpath.URLClassLoaderAccess
 import host.minestudio.frost.api.dependencies.resolver.DirectMavenResolver
 import host.minestudio.frost.api.dependencies.resolver.impl.SimpleLibraryStore
 import host.minestudio.frost.api.shards.annotations.ShardConfig
 import host.minestudio.frost.api.shards.command.ShardCommand
 import host.minestudio.frost.api.shards.impl.ShardHelperImpl
+import host.minestudio.frost.spawnWorld
 import net.minestom.server.MinecraftServer
 import net.minestom.server.command.builder.arguments.Argument
 import org.eclipse.aether.graph.Dependency
@@ -13,14 +13,11 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.lang.reflect.Method
-import java.net.URLClassLoader
 import java.nio.file.Path
 import java.util.ServiceLoader
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.exists
 import kotlin.time.measureTimedValue
-
-val PLUGIN_REGEX = Regex("[0-9a-z-]+")
 
 class ShardManager {
     private val logger: Logger = LoggerFactory.getLogger(ShardManager::class.java)
@@ -40,6 +37,13 @@ class ShardManager {
         } finally {
             logStep("COMPLETE") { "Shard loading finished" }
             printLoadMetrics()
+
+            Runtime.getRuntime().addShutdownHook(Thread {
+                logStep("SHUTDOWN") { "Cleaning up shards" }
+                trashModules()
+                logSubStep("All shards cleaned up")
+                logDivider()
+            })
         }
     }
 
@@ -72,7 +76,7 @@ class ShardManager {
                 val shard = ServiceLoader.load(Shard::class.java, loader).firstOrNull()
                 if (shard != null) {
                     shardsAndLoaders.add(Pair(shard, loader))
-                    logSubStep("Loaded shard: ${shard.info?.name ?: "UNKNOWN"} from ${file.name}")
+                    logSubStep("Loaded shard: ${shard.getInfo()?.name ?: "UNKNOWN"} from ${file.name}")
                 } else {
                     logger.warn("No shard found in ${file.name}")
                 }
@@ -88,7 +92,7 @@ class ShardManager {
         val shardsWithDependencies = shardsAndLoaders.mapNotNull { (shard, loader) ->
             processShard(shard, loader, dataDir).also { result ->
                 if (result != null) {
-                    shards[result.shard.info!!.id] = result.shard
+                    shards[result.shard.getInfo()!!.id] = result.shard
                 }
             }
         }
@@ -110,19 +114,19 @@ class ShardManager {
     )
 
     private fun processShard(shard: Shard, loader: ShardClassLoader, dataDir: Path): ProcessedShardResult? {
-        val shardName = shard.info?.name ?: "UNKNOWN"
-        var result: ProcessedShardResult? = null
-        var durationMs: Long = 0
+        val shardName = shard.getInfo()?.name!!
+        var result: ProcessedShardResult?
+        var durationMs: Long
         try {
             val timed = measureTimedValue {
                 logStep("SHARD") { "Processing ${shard.jarLocation?.file?.substringAfterLast('/') ?: "UNKNOWN"}" }
 
                 setupShardContext(shard, loader, dataDir)
-                logSubStep("Metadata loaded: ${shard.info!!.name} v${shard.info!!.version}")
+                logSubStep("Metadata loaded: ${shard.getInfo()!!.name} v${shard.getInfo()!!.version}")
 
                 val dependencyResult = loadDependenciesForShard(shard)
                 if (dependencyResult != null) {
-                    logSubStep("Dependencies resolved with ${shard.loader.javaClass.simpleName}", 2)
+                    logSubStep("Dependencies resolved with ${shard.getClassLoader()!!.javaClass.simpleName}", 2)
                 } else {
                     logSubStep("No dependencies to resolve", 2)
                 }
@@ -166,13 +170,11 @@ class ShardManager {
     private fun registerLibraries(libraryInfos: List<Pair<ShardClassLoader, Pair<SimpleLibraryStore, DirectMavenResolver>>>) {
         logger.info("┌─ REGISTERING LIBRARIES ──────────────────────")
 
-        val currentClassLoader = Thread.currentThread().contextClassLoader
-
         try {
             libraryInfos.forEach { (shardClassLoader, libraryPair) ->
                 val (store, _) = libraryPair
                 try {
-                    logger.info("│   Registering libraries for ${shardClassLoader.toString()}")
+                    logger.info("│   Registering libraries for $shardClassLoader")
                     store.paths.forEach { path ->
                         if (path == null || !path.exists()) {
                             logger.warn("│   [!] Library path does not exist: $path")
@@ -182,7 +184,7 @@ class ShardManager {
                         try {
                             shardClassLoader.addDependencyURL(path.toUri().toURL())
                             logger.info("|     └─ ✅")
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             logger.error("|     └─ ❌")
                             return@forEach
                         }
@@ -202,15 +204,15 @@ class ShardManager {
                 val (_, duration) = measureTimedValue {
                     installShard(shard)
                 }
-                loadMetrics[shard.info?.name ?: "UNKNOWN"] = ShardLoadResult(
-                    shard.info?.name ?: "UNKNOWN",
+                loadMetrics[shard.getInfo()?.name ?: "UNKNOWN"] = ShardLoadResult(
+                    shard.getInfo()?.name ?: "UNKNOWN",
                     duration.inWholeMilliseconds,
                     true
                 )
             } catch (e: Exception) {
                 logger.error("│   [!] FAILED TO INSTALL SHARD", e)
-                loadMetrics[shard.info?.name ?: "UNKNOWN"] = ShardLoadResult(
-                    shard.info?.name ?: "UNKNOWN",
+                loadMetrics[shard.getInfo()?.name ?: "UNKNOWN"] = ShardLoadResult(
+                    shard.getInfo()?.name ?: "UNKNOWN",
                     0,
                     false,
                     e.message
@@ -226,13 +228,7 @@ class ShardManager {
             ShardInfo(it.name, it.id, it.version, "unused", it.deps.toList())
         } ?: throw IllegalStateException("ShardConfig annotation missing on ${shard.javaClass.name}")
 
-        shard.apply {
-            loader = shardLoader
-            info = shardInfo
-            dataFolder = dataDir.toFile()
-            shardHelper = ShardHelperImpl(shardInfo.id, shardInfo.name)
-            hasContext = true
-        }
+        shard.init(shardLoader, ShardHelperImpl(shardInfo.id, shardInfo.name), shardInfo, spawnWorld, dataDir.toFile())
 
         Thread.currentThread().contextClassLoader = this::class.java.classLoader
 
@@ -251,16 +247,16 @@ class ShardManager {
                 val resolver = DirectMavenResolver()
                 val store = SimpleLibraryStore()
 
-                val shardAppointedResolver = shard.shardHelper.shardAppointedDependencyLoader
+                val shardAppointedResolver = shard.getShardAppointedDependencyLoader()
                 if (shardAppointedResolver == null) {
-                    logger.warn("│     No appointed dependency loader found for ${shard.info?.name ?: "UNKNOWN"}")
+                    logger.warn("│     No appointed dependency loader found for ${shard.getInfo()?.name ?: "UNKNOWN"}")
                     return@measureTimedValue null
                 }
                 logSubStep("Loading dependencies with ${shardAppointedResolver.javaClass.simpleName}", 2)
                 shardAppointedResolver.loadDependencies(resolver)
 
                 resolver.register(store)
-                Pair(shard.loader, Pair(store, resolver))
+                Pair(shard.getClassLoader()!!, Pair(store, resolver))
             } catch (e: Exception) {
                 logger.error("│     [!] DEPENDENCY RESOLUTION FAILED", e)
                 throw e
@@ -272,10 +268,10 @@ class ShardManager {
 
     private fun installShard(shard: Shard) {
         // Check dependencies first
-        shard.info?.deps.orEmpty().forEach { dep ->
+        shard.getInfo()?.deps.orEmpty().forEach { dep ->
             val depShard = shards[dep] ?: throw IllegalStateException("Missing dependency: $dep")
 
-            if (depShard.info?.deps?.contains(shard.info!!.id) == true) {
+            if (depShard.getInfo()?.deps?.contains(shard.getInfo()!!.id) == true) {
                 throw IllegalStateException("Circular dependency with $dep")
             }
 
@@ -302,13 +298,13 @@ class ShardManager {
     }
 
     private fun registerShardCommands(shard: Shard) {
-        val commandLoader = ShardCommandLoader(shard.loader, shard, logger)
+        val commandLoader = ShardCommandLoader(shard, logger)
         val commands = commandLoader.loadCommands()
 
         if (commands.isNotEmpty()) {
             logger.info("┌─ Commands Registered ────────────")
             commands.forEach { cmd ->
-                val minestomCmd = ShardCommandLoader.MinestomCommand(cmd, shard)
+                val minestomCmd = ShardCommandLoader.MinestomCommand(cmd)
                 MinecraftServer.getCommandManager().register(minestomCmd)
 
                 logger.info("├─ ${cmd.name.padEnd(15)} (${cmd.aliases.joinToString(", ")})")
@@ -331,7 +327,7 @@ class ShardManager {
         shards.values.forEach { shard ->
             try {
                 shard.delete()
-                logSubStep("Unloaded ${shard.info?.name ?: "UNKNOWN"}")
+                logSubStep("Unloaded ${shard.getInfo()?.name ?: "UNKNOWN"}")
             } catch (e: Exception) {
                 logger.error("│   [!] FAILED TO UNLOAD SHARD", e)
             }
@@ -392,7 +388,37 @@ class ShardManager {
         val permission: String,
         val arguments: List<Argument<*>>? = null,
         val subcommands: Map<Method, SubcommandOpts>? = null
-    )
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as CommandOpts
+
+            if (name != other.name) return false
+            if (cmd != other.cmd) return false
+            if (!aliases.contentEquals(other.aliases)) return false
+            if (description != other.description) return false
+            if (usage != other.usage) return false
+            if (permission != other.permission) return false
+            if (arguments != other.arguments) return false
+            if (subcommands != other.subcommands) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = name.hashCode()
+            result = 31 * result + cmd.hashCode()
+            result = 31 * result + aliases.contentHashCode()
+            result = 31 * result + description.hashCode()
+            result = 31 * result + usage.hashCode()
+            result = 31 * result + permission.hashCode()
+            result = 31 * result + (arguments?.hashCode() ?: 0)
+            result = 31 * result + (subcommands?.hashCode() ?: 0)
+            return result
+        }
+    }
 
     data class SubcommandOpts(
         val path: String,

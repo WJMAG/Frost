@@ -18,6 +18,7 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
+    implementation(kotlin("reflect"))
 
     // Internal dependencies
     compileOnly(libs.maven.resolver.provider)
@@ -25,6 +26,10 @@ dependencies {
     compileOnly(libs.maven.resolver.file)
     compileOnly(libs.maven.resolver.http)
     compileOnly(libs.maven.resolver.classpath)
+    compileOnly(libs.ktor.client.cio)
+    compileOnly(libs.ktor.client.content.negotiation)
+    compileOnly(libs.ktor.serialization.kotlinx.json)
+    compileOnly(libs.kotlinx.coroutines.core)
 
     // Exposed APIs
     api(libs.maven.resolver.impl)
