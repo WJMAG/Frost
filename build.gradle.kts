@@ -4,7 +4,7 @@ plugins {
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
-group = "host.minestudio"
+group = "gg.wjmag"
 version = System.getenv("VERSION") ?: "dev"
 
 

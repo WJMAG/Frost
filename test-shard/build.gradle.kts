@@ -3,7 +3,7 @@ plugins {
     id("com.google.devtools.ksp") version "2.2.10-2.0.2"
 }
 
-group = "host.minestudio"
+group = "gg.wjmag"
 version = "1.0-SNAPSHOT"
 
 repositories {
