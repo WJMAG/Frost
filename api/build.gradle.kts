@@ -50,6 +50,21 @@ publishing {
             }
         }
     }
+
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+            groupId = project.group.toString()
+            artifactId = "frost-api"
+            version = project.version.toString()
+
+            pom {
+                name.set("Frost API")
+                description.set("The API for Frost, a Minecraft server software.")
+                url.set("https://github.com/wjmag/frost")
+            }
+        }
+    }
 }
 
 tasks.test {
