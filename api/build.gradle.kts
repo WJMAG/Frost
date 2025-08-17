@@ -36,6 +36,7 @@ dependencies {
     api(libs.minestom) // MINESTOM SNAPSHOTS
     api(libs.kotlinx.serialization) // JSON SERIALIZER
     api(libs.auto.service) // AUTO SERVICE
+    api(libs.boosted.yaml) // YAML PARSER
 }
 
 
@@ -45,8 +46,8 @@ publishing {
             name = "GitHubPackages"
             url = URI("https://maven.pkg.github.com/wjmag/frost")
             credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
+                username = System.getenv("GITHUB_ACTOR") ?: error("GITHUB_ACTOR environment variable is not set.")
+                password = System.getenv("GITHUB_TOKEN") ?: error("GITHUB_TOKEN environment variable is not set.")
             }
         }
     }

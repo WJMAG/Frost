@@ -1,5 +1,6 @@
 package host.minestudio.frost.api.shards
 
+import host.minestudio.frost.shardManager
 import org.jetbrains.annotations.ApiStatus
 import org.slf4j.LoggerFactory
 import java.net.URL
@@ -8,7 +9,8 @@ import java.net.URLClassLoader
 @ApiStatus.Internal
 class ShardClassLoader(
     urls: Array<URL?>,
-    parentClassLoader: ClassLoader
+    parentClassLoader: ClassLoader,
+    manager: ShardManager
 ) : URLClassLoader(urls.filterNotNull().toTypedArray(), parentClassLoader) {
 
     var shard: Shard? = null
@@ -22,57 +24,48 @@ class ShardClassLoader(
             return field ?: throw IllegalStateException("Shard is not set for this classloader")
         }
     private val logger = LoggerFactory.getLogger(ShardClassLoader::class.java)
-    private val classCache = mutableMapOf<String, Class<*>>()
+    private val cachedClasses = mutableMapOf<String, Class<*>>()
 
-    override fun loadClass(name: String, resolve: Boolean): Class<*> {
-        synchronized(getClassLoadingLock(name)) {
-            logger.debug("Attempting to load class: $name through ${urLs.size} loaders")
-
-            var loadedClass = findLoadedClass(name)
-            if (loadedClass != null) return loadedClass
-
-            loadedClass = classCache[name]
-            if (loadedClass != null) return loadedClass
-
-            try {
-                loadedClass = findClass(name).also {
-                    logger.debug("Found class in shard: $name")
-                    if (resolve) resolveClass(it)
-                }
-                classCache[name] = loadedClass
-                return loadedClass
-            } catch (_: ClassNotFoundException) {
-                // Not found in this classloader, continue
-            }
-
-            try {
-                loadedClass = super.loadClass(name, resolve).also {
-                    logger.debug("Loaded class from parent: $name")
-                }
-                classCache[name] = loadedClass
-                return loadedClass
-            } catch (e: ClassNotFoundException) {
-                logger.error("Failed to load class: $name", e)
-                throw e
-            }
-        }
+    override fun findClass(name: String): Class<*>? {
+        return findClass(name, true)
     }
 
-    override fun findClass(name: String): Class<*> {
-        logger.trace("Finding class: $name")
-        return try {
-            super.findClass(name).also {
-                logger.debug("Found class in shard: $name")
+    private fun findClass(name: String, resolve: Boolean): Class<*> {
+        if (cachedClasses.containsKey(name)) return cachedClasses[name]!!
+
+        if (resolve) {
+            if (cachedParentClasses.containsKey(name)) return cachedParentClasses[name]!!
+            for (shard in shardManager.shards.values) {
+                try {
+                    val clazz = shard.getClassLoader()!!.findClass(name, false)
+                    val loader = clazz.classLoader
+                    if (loader is ShardClassLoader) {
+                        loader.shard!!.getInfo()?.let {
+                            if (!(shard.getInfo()?.deps?.contains(it.id) ?: false) && (it.id != (shard.getInfo()?.id
+                                    ?: false))
+                            ) {
+                                logger.warn("Class {} is loaded by shard {}, but it is not a dependency of the current shard {}", name, it.id, this.shard?.getInfo()?.id ?: "UNKNOWN")
+                            }
+                        }
+                    }
+                    cachedClasses[name] = clazz
+                    return clazz
+                } catch (_: ClassNotFoundException) {}
             }
-        } catch (e: ClassNotFoundException) {
-            logger.trace("Class not found in shard: $name")
-            throw e
         }
+
+        val clazz = super.findClass(name) ?: throw ClassNotFoundException("Class $name not found in any shard or parent classloader")
+        cachedParentClasses[name] = clazz
+        return clazz
     }
 
     fun addDependencyURL(url: URL) {
         logger.debug("Adding dependency URL: {}", url)
         addURL(url)
         logger.debug("All URLs after addition: {}", urLs.joinToString(", ") { it.toString() })
+    }
+
+    private companion object {
+        val cachedParentClasses = HashMap<String, Class<*>>()
     }
 }

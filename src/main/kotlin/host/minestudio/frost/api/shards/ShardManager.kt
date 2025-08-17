@@ -72,7 +72,7 @@ class ShardManager {
             }
 
             try {
-                val loader = ShardClassLoader(arrayOf(file.toURI().toURL()), ShardManager::class.java.classLoader)
+                val loader = ShardClassLoader(arrayOf(file.toURI().toURL()), ShardManager::class.java.classLoader, this)
                 val shard = ServiceLoader.load(Shard::class.java, loader).firstOrNull()
                 loader.shard = shard
                 if (shard != null) {
