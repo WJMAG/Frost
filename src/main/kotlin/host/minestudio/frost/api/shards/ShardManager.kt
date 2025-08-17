@@ -74,9 +74,11 @@ class ShardManager {
             try {
                 val loader = ShardClassLoader(arrayOf(file.toURI().toURL()), ShardManager::class.java.classLoader)
                 val shard = ServiceLoader.load(Shard::class.java, loader).firstOrNull()
+                loader.shard = shard
                 if (shard != null) {
                     shardsAndLoaders.add(Pair(shard, loader))
-                    logSubStep("Loaded shard: ${shard.getInfo()?.name ?: "UNKNOWN"} from ${file.name}")
+                    setupShardContext(shard, loader, dataDir)
+                    logSubStep("Loaded shard: ${shard.getInfo()?.name ?: "UNKNOWN"} v${shard.getInfo()?.version ?: "NoVer"} from ${file.name}")
                 } else {
                     logger.warn("No shard found in ${file.name}")
                 }
@@ -114,15 +116,14 @@ class ShardManager {
     )
 
     private fun processShard(shard: Shard, loader: ShardClassLoader, dataDir: Path): ProcessedShardResult? {
-        val shardName = shard.getInfo()?.name!!
+        val shardName = shard.getInfo()?.name ?: "UNKNOWN"
         var result: ProcessedShardResult?
         var durationMs: Long
         try {
             val timed = measureTimedValue {
                 logStep("SHARD") { "Processing ${shard.jarLocation?.file?.substringAfterLast('/') ?: "UNKNOWN"}" }
 
-                setupShardContext(shard, loader, dataDir)
-                logSubStep("Metadata loaded: ${shard.getInfo()!!.name} v${shard.getInfo()!!.version}")
+                //setupShardContext(shard, loader, dataDir)
 
                 val dependencyResult = loadDependenciesForShard(shard)
                 if (dependencyResult != null) {
@@ -138,7 +139,7 @@ class ShardManager {
                             .map { dep -> Pair(dep.key!!, dep.value!!) },
                         it
                     )
-                }
+                } ?: ProcessedShardResult(shard, emptyList(), Pair(loader, Pair(SimpleLibraryStore(), DirectMavenResolver())))
             }
             result = timed.value
             durationMs = timed.duration.inWholeMilliseconds
@@ -174,7 +175,7 @@ class ShardManager {
             libraryInfos.forEach { (shardClassLoader, libraryPair) ->
                 val (store, _) = libraryPair
                 try {
-                    logger.info("│   Registering libraries for $shardClassLoader")
+                    logger.info("│   Registering libraries for ${shardClassLoader.shard!!.getInfo()?.name ?: "UNKNOWN"}")
                     store.paths.forEach { path ->
                         if (path == null || !path.exists()) {
                             logger.warn("│   [!] Library path does not exist: $path")

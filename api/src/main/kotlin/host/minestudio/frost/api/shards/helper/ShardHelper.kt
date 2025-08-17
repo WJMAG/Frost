@@ -1,6 +1,8 @@
 package host.minestudio.frost.api.shards.helper
 
 import host.minestudio.frost.api.config.ConfigSchema
+import host.minestudio.frost.api.lang.Lang
+import host.minestudio.frost.api.shards.Shard
 import host.minestudio.frost.api.shards.ShardDependencyLoader
 import host.minestudio.frost.api.shards.command.ShardCommand
 import host.minestudio.frost.api.shards.enum.LogLevel
@@ -38,4 +40,9 @@ interface ShardHelper {
      * @param command The command to be registered.
      */
     fun registerCommand(command: ShardCommand)
+
+    /**
+     * Retrieves a language instance based on the provided title, language, and variant.
+     */
+    fun getLang(title: String, lang: String, variant: String, clazz: Class<out Shard>): Lang
 }

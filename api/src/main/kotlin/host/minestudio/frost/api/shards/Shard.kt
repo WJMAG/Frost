@@ -1,6 +1,7 @@
 package host.minestudio.frost.api.shards
 
 import host.minestudio.frost.api.config.ConfigSchema
+import host.minestudio.frost.api.lang.Lang
 import host.minestudio.frost.api.shards.command.ShardCommand
 import host.minestudio.frost.api.shards.enum.LogLevel
 import host.minestudio.frost.api.shards.helper.LogEmitter
@@ -192,7 +193,7 @@ abstract class Shard() {
 
     protected fun getStorageService(): StorageService {
         if (!hasContext) {
-            throw IllegalStateException("This shard does not have contex assigned yet. Please ensure you're calling this after presetup or create, and not during a constructor.")
+            throw IllegalStateException("This shard does not have context assigned yet. Please ensure you're calling this after presetup or create, and not during a constructor.")
         }
         return this.helper.getStorageService()
     }
@@ -214,6 +215,13 @@ abstract class Shard() {
         this.helper.registerCommand(command)
     }
 
+    fun getLang(title: String, lang: String, variant: String): Lang {
+        if (!hasContext) {
+            throw IllegalStateException("This shard does not have context assigned yet. Please ensure you're calling this after presetup or create, and not during a constructor.")
+        }
+        return this.helper.getLang(title, lang, variant, this.javaClass)
+    }
+
     fun setDependencyloader(loader: ShardDependencyLoader) {
         if (!hasContext) {
             throw IllegalStateException("This shard does not have context assigned yet. Please ensure you're calling this after presetup or create, and not during a constructor.")
@@ -229,15 +237,15 @@ abstract class Shard() {
     }
 
     fun getInfo(): ShardInfo? {
-        return this.info
+        return if (this::info.isInitialized) this.info else null
     }
 
     fun getClassLoader(): ShardClassLoader? {
-        return this.loader
+        return if (this::loader.isInitialized) this.loader else null
     }
 
     fun getShardAppointedDependencyLoader(): ShardDependencyLoader? {
-        return this.helper.shardAppointedDependencyLoader
+        return if (this::helper.isInitialized) this.helper.shardAppointedDependencyLoader else null
     }
 
 }

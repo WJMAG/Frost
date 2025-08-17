@@ -1,6 +1,10 @@
 package host.minestudio.frost.api.shards.impl
 
 import host.minestudio.frost.api.config.ConfigSchema
+import host.minestudio.frost.api.lang.Lang
+import host.minestudio.frost.api.lang.LangImpl
+import host.minestudio.frost.api.lang.LangLoader
+import host.minestudio.frost.api.shards.Shard
 import host.minestudio.frost.api.shards.ShardDependencyLoader
 import host.minestudio.frost.api.shards.command.ShardCommand
 import host.minestudio.frost.api.shards.enum.LogLevel
@@ -39,6 +43,11 @@ class ShardHelperImpl(
 
     override fun registerCommand(command: ShardCommand) {
         commands.add(command)
+    }
+
+    override fun getLang(title: String, lang: String, variant: String, clazz: Class<out Shard>): Lang {
+        val loader = LangLoader(clazz, title, lang, variant)
+        return LangImpl(loader.getBundle())
     }
 
 }

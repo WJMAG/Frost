@@ -11,6 +11,16 @@ class ShardClassLoader(
     parentClassLoader: ClassLoader
 ) : URLClassLoader(urls.filterNotNull().toTypedArray(), parentClassLoader) {
 
+    var shard: Shard? = null
+        set(value) {
+            if (field != null) {
+                throw IllegalStateException("Shard is already set for this classloader")
+            }
+            field = value
+        }
+        get() {
+            return field ?: throw IllegalStateException("Shard is not set for this classloader")
+        }
     private val logger = LoggerFactory.getLogger(ShardClassLoader::class.java)
     private val classCache = mutableMapOf<String, Class<*>>()
 
