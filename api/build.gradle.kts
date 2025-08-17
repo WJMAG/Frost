@@ -37,6 +37,7 @@ dependencies {
     api(libs.kotlinx.serialization) // JSON SERIALIZER
     api(libs.auto.service) // AUTO SERVICE
     api(libs.boosted.yaml) // YAML PARSER
+    api("net.kyori:adventure-text-minimessage:4.24.0")
 }
 
 
