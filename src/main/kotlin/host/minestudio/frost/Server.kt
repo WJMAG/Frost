@@ -81,6 +81,7 @@ fun main() {
     println(" / __/ / _, _/ /_/ /___/ // /    ")
     println("/_/   /_/ |_|\\____//____//_/     ")
     println("     -- By MineStudio --  ")
+    println("    -- Forked by WJMAG --  ")
 }
 
 private fun setupWorld() {
